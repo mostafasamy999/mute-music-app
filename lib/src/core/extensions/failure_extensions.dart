@@ -9,5 +9,9 @@ extension AppFailureX on AppFailure {
     AppFailure.saveFailed => S.of(context).errorSaveFailed,
     AppFailure.noVideoTrack => S.of(context).errorNoVideoTrack,
     AppFailure.permissionDenied => S.of(context).errorPermission,
+    AppFailure.modelDownloadFailed => S.of(context).errorModelDownload,
+    AppFailure.modelMissing => S.of(context).errorModelMissing,
+    AppFailure.noAudioTrack => S.of(context).errorNoAudioTrack,
+    AppFailure.musicRemovalFailed => S.of(context).errorMusicRemoval,
   };
 }

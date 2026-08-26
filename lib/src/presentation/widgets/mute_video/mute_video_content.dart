@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mute_music_app/generated/l10n.dart';
+import 'package:mute_music_app/src/config/routes/routes_manager.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/pick_video_button.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_music_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_sound_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/save_video_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/status_message.dart';
@@ -13,7 +15,17 @@ class MuteVideoContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(S.of(context).appTitle)),
+    appBar: AppBar(
+      title: Text(S.of(context).appTitle),
+      // TEMPORARY: entry to the on-device memory probe. Remove with it.
+      actions: <Widget>[
+        IconButton(
+          icon: const Icon(Icons.memory),
+          onPressed: () =>
+              Navigator.of(context).pushNamed(Routes.memoryProbe),
+        ),
+      ],
+    ),
     body: SafeArea(
       child: Padding(
         padding: const EdgeInsetsDirectional.all(AppSpacing.md),
@@ -24,6 +36,8 @@ class MuteVideoContent extends StatelessWidget {
             StatusMessage(),
             SizedBox(height: AppSpacing.md),
             PickVideoButton(),
+            SizedBox(height: AppSpacing.sm),
+            RemoveMusicButton(),
             SizedBox(height: AppSpacing.sm),
             RemoveSoundButton(),
             SizedBox(height: AppSpacing.sm),

@@ -23,11 +23,26 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "appTitle": MessageLookupByLibrary.simpleMessage("كتم الفيديو"),
+    "downloadingModel": MessageLookupByLibrary.simpleMessage(
+      "جاري التجهيز، لمرة واحدة فقط...",
+    ),
     "emptyHint": MessageLookupByLibrary.simpleMessage(
       "اختر فيديو وسأزيل الصوت منه.",
     ),
+    "errorModelDownload": MessageLookupByLibrary.simpleMessage(
+      "تعذر تنزيل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وحاول مرة أخرى.",
+    ),
+    "errorModelMissing": MessageLookupByLibrary.simpleMessage(
+      "نموذج الذكاء الاصطناعي غير جاهز. حاول مرة أخرى.",
+    ),
+    "errorMusicRemoval": MessageLookupByLibrary.simpleMessage(
+      "تعذرت إزالة الموسيقى من هذا الفيديو.",
+    ),
     "errorMuteFailed": MessageLookupByLibrary.simpleMessage(
       "تعذرت إزالة الصوت.",
+    ),
+    "errorNoAudioTrack": MessageLookupByLibrary.simpleMessage(
+      "هذا الفيديو لا يحتوي على صوت.",
     ),
     "errorNoVideoTrack": MessageLookupByLibrary.simpleMessage(
       "هذا الملف لا يحتوي على فيديو.",
@@ -42,13 +57,21 @@ class MessageLookup extends MessageLookupByLibrary {
       "تعذر حفظ الفيديو.",
     ),
     "labelMuted": MessageLookupByLibrary.simpleMessage("بدون صوت"),
+    "labelNoMusic": MessageLookupByLibrary.simpleMessage("بدون موسيقى"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("الأصلي"),
     "pickAnotherVideo": MessageLookupByLibrary.simpleMessage("اختر فيديو آخر"),
     "pickVideo": MessageLookupByLibrary.simpleMessage("اختر فيديو"),
     "readyToSave": MessageLookupByLibrary.simpleMessage(
       "تمت إزالة الصوت. يمكنك حفظه الآن.",
     ),
+    "readyToSaveMusic": MessageLookupByLibrary.simpleMessage(
+      "تمت إزالة الموسيقى. يمكنك حفظه الآن.",
+    ),
+    "removeMusic": MessageLookupByLibrary.simpleMessage("إزالة الموسيقى فقط"),
     "removeSound": MessageLookupByLibrary.simpleMessage("إزالة الصوت"),
+    "removingMusic": MessageLookupByLibrary.simpleMessage(
+      "جاري إزالة الموسيقى...",
+    ),
     "saveToGallery": MessageLookupByLibrary.simpleMessage("حفظ في المعرض"),
     "savedToGallery": MessageLookupByLibrary.simpleMessage(
       "تم الحفظ في المعرض",

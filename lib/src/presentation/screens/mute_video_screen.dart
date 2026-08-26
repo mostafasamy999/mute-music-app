@@ -32,6 +32,8 @@ class MuteVideoScreen extends StatelessWidget {
       case MuteVideoStatus.initial:
       case MuteVideoStatus.picking:
       case MuteVideoStatus.muting:
+      case MuteVideoStatus.preparingModel:
+      case MuteVideoStatus.removingMusic:
       case MuteVideoStatus.muted:
       case MuteVideoStatus.saving:
         break;

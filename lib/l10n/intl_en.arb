@@ -16,5 +16,14 @@
   "errorMuteFailed": "Could not remove the sound.",
   "errorSaveFailed": "Could not save the video.",
   "errorNoVideoTrack": "This file has no video inside it.",
-  "errorPermission": "Permission denied. Allow gallery access to save."
+  "errorPermission": "Permission denied. Allow gallery access to save.",
+  "errorModelDownload": "Could not download the AI model. Check your internet and try again.",
+  "removeMusic": "Remove music only",
+  "downloadingModel": "Getting ready, one time only...",
+  "removingMusic": "Removing the music...",
+  "labelNoMusic": "No music",
+  "readyToSaveMusic": "Music removed. You can save it now.",
+  "errorModelMissing": "The AI model is not ready yet. Try again.",
+  "errorNoAudioTrack": "This video has no sound to work on.",
+  "errorMusicRemoval": "Could not remove the music from this video."
 }

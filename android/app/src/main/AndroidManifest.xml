@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Downloading the separation model on first use. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Picking a video on Android 13+. -->
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <!-- Saving to the gallery on Android 9 and older. -->

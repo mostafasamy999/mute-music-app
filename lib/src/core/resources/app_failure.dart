@@ -5,4 +5,8 @@ enum AppFailure {
   saveFailed,
   noVideoTrack,
   permissionDenied,
+  modelDownloadFailed,
+  modelMissing,
+  noAudioTrack,
+  musicRemovalFailed,
 }

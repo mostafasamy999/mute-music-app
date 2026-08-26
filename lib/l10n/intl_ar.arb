@@ -16,5 +16,14 @@
   "errorMuteFailed": "تعذرت إزالة الصوت.",
   "errorSaveFailed": "تعذر حفظ الفيديو.",
   "errorNoVideoTrack": "هذا الملف لا يحتوي على فيديو.",
-  "errorPermission": "تم رفض الإذن. اسمح بالوصول للمعرض للحفظ."
+  "errorPermission": "تم رفض الإذن. اسمح بالوصول للمعرض للحفظ.",
+  "errorModelDownload": "تعذر تنزيل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وحاول مرة أخرى.",
+  "removeMusic": "إزالة الموسيقى فقط",
+  "downloadingModel": "جاري التجهيز، لمرة واحدة فقط...",
+  "removingMusic": "جاري إزالة الموسيقى...",
+  "labelNoMusic": "بدون موسيقى",
+  "readyToSaveMusic": "تمت إزالة الموسيقى. يمكنك حفظه الآن.",
+  "errorModelMissing": "نموذج الذكاء الاصطناعي غير جاهز. حاول مرة أخرى.",
+  "errorNoAudioTrack": "هذا الفيديو لا يحتوي على صوت.",
+  "errorMusicRemoval": "تعذرت إزالة الموسيقى من هذا الفيديو."
 }

@@ -23,11 +23,26 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "appTitle": MessageLookupByLibrary.simpleMessage("Mute Video"),
+    "downloadingModel": MessageLookupByLibrary.simpleMessage(
+      "Getting ready, one time only...",
+    ),
     "emptyHint": MessageLookupByLibrary.simpleMessage(
       "Choose a video and I will remove its sound.",
     ),
+    "errorModelDownload": MessageLookupByLibrary.simpleMessage(
+      "Could not download the AI model. Check your internet and try again.",
+    ),
+    "errorModelMissing": MessageLookupByLibrary.simpleMessage(
+      "The AI model is not ready yet. Try again.",
+    ),
+    "errorMusicRemoval": MessageLookupByLibrary.simpleMessage(
+      "Could not remove the music from this video.",
+    ),
     "errorMuteFailed": MessageLookupByLibrary.simpleMessage(
       "Could not remove the sound.",
+    ),
+    "errorNoAudioTrack": MessageLookupByLibrary.simpleMessage(
+      "This video has no sound to work on.",
     ),
     "errorNoVideoTrack": MessageLookupByLibrary.simpleMessage(
       "This file has no video inside it.",
@@ -42,6 +57,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Could not save the video.",
     ),
     "labelMuted": MessageLookupByLibrary.simpleMessage("No sound"),
+    "labelNoMusic": MessageLookupByLibrary.simpleMessage("No music"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("Original"),
     "pickAnotherVideo": MessageLookupByLibrary.simpleMessage(
       "Pick another video",
@@ -50,7 +66,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "readyToSave": MessageLookupByLibrary.simpleMessage(
       "Sound removed. You can save it now.",
     ),
+    "readyToSaveMusic": MessageLookupByLibrary.simpleMessage(
+      "Music removed. You can save it now.",
+    ),
+    "removeMusic": MessageLookupByLibrary.simpleMessage("Remove music only"),
     "removeSound": MessageLookupByLibrary.simpleMessage("Remove sound"),
+    "removingMusic": MessageLookupByLibrary.simpleMessage(
+      "Removing the music...",
+    ),
     "saveToGallery": MessageLookupByLibrary.simpleMessage("Save to gallery"),
     "savedToGallery": MessageLookupByLibrary.simpleMessage(
       "Saved to your gallery",

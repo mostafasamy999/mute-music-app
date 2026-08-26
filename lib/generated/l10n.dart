@@ -198,6 +198,91 @@ class S {
       args: [],
     );
   }
+
+  /// `Could not download the AI model. Check your internet and try again.`
+  String get errorModelDownload {
+    return Intl.message(
+      'Could not download the AI model. Check your internet and try again.',
+      name: 'errorModelDownload',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove music only`
+  String get removeMusic {
+    return Intl.message(
+      'Remove music only',
+      name: 'removeMusic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Getting ready, one time only...`
+  String get downloadingModel {
+    return Intl.message(
+      'Getting ready, one time only...',
+      name: 'downloadingModel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Removing the music...`
+  String get removingMusic {
+    return Intl.message(
+      'Removing the music...',
+      name: 'removingMusic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No music`
+  String get labelNoMusic {
+    return Intl.message('No music', name: 'labelNoMusic', desc: '', args: []);
+  }
+
+  /// `Music removed. You can save it now.`
+  String get readyToSaveMusic {
+    return Intl.message(
+      'Music removed. You can save it now.',
+      name: 'readyToSaveMusic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The AI model is not ready yet. Try again.`
+  String get errorModelMissing {
+    return Intl.message(
+      'The AI model is not ready yet. Try again.',
+      name: 'errorModelMissing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This video has no sound to work on.`
+  String get errorNoAudioTrack {
+    return Intl.message(
+      'This video has no sound to work on.',
+      name: 'errorNoAudioTrack',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not remove the music from this video.`
+  String get errorMusicRemoval {
+    return Intl.message(
+      'Could not remove the music from this video.',
+      name: 'errorMusicRemoval',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

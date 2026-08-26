@@ -5,45 +5,57 @@ import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
 
+typedef _Data = ({
+  MuteVideoStatus status,
+  double progress,
+  bool musicOnly,
+  bool showsProgress,
+});
+
 class StatusMessage extends StatelessWidget {
   const StatusMessage({super.key});
 
   @override
   Widget build(BuildContext context) =>
-      BlocSelector<MuteVideoCubit, MuteVideoState, MuteVideoStatus>(
-        selector: (MuteVideoState state) => state.status,
-        builder: (BuildContext context, MuteVideoStatus status) =>
-            _row(context, status),
+      BlocSelector<MuteVideoCubit, MuteVideoState, _Data>(
+        selector: (MuteVideoState state) => (
+          status: state.status,
+          progress: state.progress,
+          musicOnly: state.musicOnly,
+          showsProgress: state.showsProgress,
+        ),
+        builder: _builder,
       );
 
-  Widget _row(BuildContext context, MuteVideoStatus status) {
-    final String? text = _text(context, status);
+  Widget _builder(BuildContext context, _Data data) {
+    final String? text = _text(context, data);
     if (text == null) return const SizedBox.shrink();
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
       children: <Widget>[
-        if (_isBusy(status)) ...<Widget>[
-          const SizedBox.square(
-            dimension: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
+        Text(text, textAlign: TextAlign.center),
+        if (data.showsProgress) ...<Widget>[
+          const SizedBox(height: AppSpacing.sm),
+          LinearProgressIndicator(
+            value: data.progress > 0 ? data.progress : null,
           ),
-          const SizedBox(width: AppSpacing.sm),
         ],
-        Flexible(child: Text(text, textAlign: TextAlign.center)),
       ],
     );
   }
 
-  bool _isBusy(MuteVideoStatus status) =>
-      status == MuteVideoStatus.muting || status == MuteVideoStatus.saving;
+  String? _text(BuildContext context, _Data data) => switch (data.status) {
+    MuteVideoStatus.initial => S.of(context).emptyHint,
+    MuteVideoStatus.muting => S.of(context).working,
+    MuteVideoStatus.preparingModel => S.of(context).downloadingModel,
+    MuteVideoStatus.removingMusic => _percent(context, data.progress),
+    MuteVideoStatus.saving => S.of(context).saving,
+    MuteVideoStatus.muted => data.musicOnly
+        ? S.of(context).readyToSaveMusic
+        : S.of(context).readyToSave,
+    MuteVideoStatus.saved => S.of(context).savedToGallery,
+    MuteVideoStatus.picking || MuteVideoStatus.failure => null,
+  };
 
-  String? _text(BuildContext context, MuteVideoStatus status) =>
-      switch (status) {
-        MuteVideoStatus.initial => S.of(context).emptyHint,
-        MuteVideoStatus.muting => S.of(context).working,
-        MuteVideoStatus.saving => S.of(context).saving,
-        MuteVideoStatus.muted => S.of(context).readyToSave,
-        MuteVideoStatus.saved => S.of(context).savedToGallery,
-        MuteVideoStatus.picking || MuteVideoStatus.failure => null,
-      };
+  String _percent(BuildContext context, double progress) =>
+      '${S.of(context).removingMusic}  ${(progress * 100).round()}%';
 }

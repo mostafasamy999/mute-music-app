@@ -31,7 +31,7 @@ object VideoMuter {
             val output = File(outputDir, "muted_${System.currentTimeMillis()}.mp4")
             muxer = MediaMuxer(output.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
             // Must be set before start(), or portrait videos come out sideways.
-            muxer.setOrientationHint(readRotation(sourcePath))
+            muxer.setOrientationHint(rotationOf(sourcePath))
             val outputTrack = muxer.addTrack(format)
             muxer.start()
 
@@ -87,6 +87,9 @@ object VideoMuter {
         } else {
             DEFAULT_BUFFER_SIZE
         }
+
+    /** Shared with AudioPipeline so both writers keep portrait clips upright. */
+    fun rotationOf(path: String): Int = readRotation(path)
 
     private fun readRotation(path: String): Int {
         val retriever = MediaMetadataRetriever()

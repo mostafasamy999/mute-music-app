@@ -7,7 +7,7 @@ import 'package:mute_music_app/src/config/theme/app_theme.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/empty_preview_hint.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/video_preview.dart';
 
-typedef _Data = ({String? path, bool muted});
+typedef _Data = ({String? path, bool muted, bool musicOnly});
 
 class VideoPreviewPanel extends StatelessWidget {
   const VideoPreviewPanel({super.key});
@@ -18,6 +18,7 @@ class VideoPreviewPanel extends StatelessWidget {
         selector: (MuteVideoState state) => (
           path: state.muted?.path ?? state.source?.path,
           muted: state.muted != null,
+          musicOnly: state.musicOnly,
         ),
         builder: _builder,
       );
@@ -28,12 +29,19 @@ class VideoPreviewPanel extends StatelessWidget {
     return Column(
       children: <Widget>[
         Text(
-          data.muted ? S.of(context).labelMuted : S.of(context).labelOriginal,
+          _label(context, data),
           style: Theme.of(context).textTheme.labelLarge,
         ),
         const SizedBox(height: AppSpacing.sm),
         Expanded(child: Center(child: VideoPreview(path: path))),
       ],
     );
+  }
+
+  String _label(BuildContext context, _Data data) {
+    if (!data.muted) return S.of(context).labelOriginal;
+    return data.musicOnly
+        ? S.of(context).labelNoMusic
+        : S.of(context).labelMuted;
   }
 }

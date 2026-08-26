@@ -25,6 +25,7 @@ class MuteMusicApp extends StatelessWidget {
       GlobalWidgetsLocalizations.delegate,
       GlobalCupertinoLocalizations.delegate,
     ],
+    debugShowCheckedModeBanner: false,
     supportedLocales: S.delegate.supportedLocales,
     initialRoute: Routes.muteVideo,
     onGenerateRoute: RoutesManager.onGenerateRoute,

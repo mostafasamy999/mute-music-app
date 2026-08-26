@@ -1,0 +1,20 @@
+{
+  "@@locale": "ar",
+  "appTitle": "كتم الفيديو",
+  "pickVideo": "اختر فيديو",
+  "pickAnotherVideo": "اختر فيديو آخر",
+  "removeSound": "إزالة الصوت",
+  "saveToGallery": "حفظ في المعرض",
+  "working": "جاري إزالة الصوت...",
+  "saving": "جاري الحفظ...",
+  "savedToGallery": "تم الحفظ في المعرض",
+  "emptyHint": "اختر فيديو وسأزيل الصوت منه.",
+  "readyToSave": "تمت إزالة الصوت. يمكنك حفظه الآن.",
+  "labelOriginal": "الأصلي",
+  "labelMuted": "بدون صوت",
+  "errorPickFailed": "تعذر فتح هذا الفيديو.",
+  "errorMuteFailed": "تعذرت إزالة الصوت.",
+  "errorSaveFailed": "تعذر حفظ الفيديو.",
+  "errorNoVideoTrack": "هذا الملف لا يحتوي على فيديو.",
+  "errorPermission": "تم رفض الإذن. اسمح بالوصول للمعرض للحفظ."
+}

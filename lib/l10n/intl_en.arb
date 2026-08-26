@@ -1,0 +1,20 @@
+{
+  "@@locale": "en",
+  "appTitle": "Mute Video",
+  "pickVideo": "Pick a video",
+  "pickAnotherVideo": "Pick another video",
+  "removeSound": "Remove sound",
+  "saveToGallery": "Save to gallery",
+  "working": "Removing sound...",
+  "saving": "Saving...",
+  "savedToGallery": "Saved to your gallery",
+  "emptyHint": "Choose a video and I will remove its sound.",
+  "readyToSave": "Sound removed. You can save it now.",
+  "labelOriginal": "Original",
+  "labelMuted": "No sound",
+  "errorPickFailed": "Could not open that video.",
+  "errorMuteFailed": "Could not remove the sound.",
+  "errorSaveFailed": "Could not save the video.",
+  "errorNoVideoTrack": "This file has no video inside it.",
+  "errorPermission": "Permission denied. Allow gallery access to save."
+}

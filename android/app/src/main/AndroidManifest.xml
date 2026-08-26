@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Picking a video on Android 13+. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- Saving to the gallery on Android 9 and older. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <application
         android:label="mute_music_app"
         android:name="${applicationName}"

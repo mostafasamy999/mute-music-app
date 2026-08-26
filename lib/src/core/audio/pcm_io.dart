@@ -17,7 +17,14 @@ abstract final class PcmIo {
   /// Reads interleaved float32, splits the channels, and lands on 44.1 kHz
   /// stereo — the only shape the model accepts.
   static StereoAudio read(File file, int sampleRate, int channels) {
-    final Float32List raw = file.readAsBytesSync().buffer.asFloat32List();
+    final Uint8List bytes = file.readAsBytesSync();
+    // View the exact region, not the whole backing buffer — a non-zero offset
+    // would otherwise read the wrong bytes.
+    final Float32List raw = Float32List.view(
+      bytes.buffer,
+      bytes.offsetInBytes,
+      bytes.lengthInBytes ~/ 4,
+    );
     final int frames = raw.length ~/ channels;
     final Float64List left = Float64List(frames);
     final Float64List right = Float64List(frames);

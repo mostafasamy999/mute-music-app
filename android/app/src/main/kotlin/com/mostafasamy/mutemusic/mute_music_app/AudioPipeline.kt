@@ -31,7 +31,9 @@ object AudioPipeline {
 
         val sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
         val channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
-        format.setInteger(MediaFormat.KEY_PCM_ENCODING, AudioFormatFloat)
+        // Deliberately not asking for float output. Decoders vary in whether
+        // they honour it and whether they report it back, and guessing wrong
+        // means reading the bytes as the wrong type, which sounds like noise.
 
         val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME)!!)
         codec.configure(format, null, null, 0)
@@ -170,8 +172,11 @@ object AudioPipeline {
         extractor: MediaExtractor,
         videoFormat: MediaFormat,
     ): Int {
-        val bytesPerFrame = 2 * 2
-        val pcmBytes = pcm.readBytes()
+        // The encoder wants 16-bit samples. The pipeline carries 32-bit floats,
+        // so convert here — handing floats straight over produces pure noise.
+        val channels = 2
+        val bytesPerFrame = channels * 2
+        val pcmBytes = floatFileToPcm16(pcm)
         val info = MediaCodec.BufferInfo()
         var offset = 0
         var audioTrackOut = -1
@@ -212,6 +217,20 @@ object AudioPipeline {
             }
         }
         return audioTrackOut
+    }
+
+    /** Little-endian float32 on disk to little-endian int16 the encoder accepts. */
+    private fun floatFileToPcm16(pcm: File): ByteArray {
+        val source = ByteBuffer.wrap(pcm.readBytes())
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .asFloatBuffer()
+        val out = ByteBuffer.allocate(source.remaining() * 2)
+            .order(ByteOrder.LITTLE_ENDIAN)
+        while (source.hasRemaining()) {
+            val clamped = source.get().coerceIn(-1f, 1f)
+            out.putShort((clamped * 32767f).toInt().toShort())
+        }
+        return out.array()
     }
 
     /** Copies the original video samples with no re-encoding. */

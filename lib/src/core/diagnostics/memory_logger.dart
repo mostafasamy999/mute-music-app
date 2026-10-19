@@ -12,6 +12,10 @@ class MemoryLogger {
   final DeviceMemoryDatasource _memory;
   final Duration every;
 
+  /// Time since this logger was made, printed on every line so steps can be
+  /// timed from the log alone.
+  final Stopwatch _clock = Stopwatch()..start();
+
   Timer? _timer;
   AppLifecycleListener? _lifecycle;
 
@@ -36,7 +40,8 @@ class MemoryLogger {
   /// Logs one line now, tagged with [label].
   Future<void> mark(String label) async {
     try {
-      debugPrint(format(label, await _memory.read()));
+      final String at = (_clock.elapsedMilliseconds / 1000).toStringAsFixed(1);
+      debugPrint('${format(label, await _memory.read())}  +${at}s');
     } on Object catch (error) {
       debugPrint('[MEM] $label  read failed: $error');
     }

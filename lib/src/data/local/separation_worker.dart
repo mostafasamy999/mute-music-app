@@ -4,6 +4,9 @@ import 'dart:isolate';
 
 import 'package:flutter/services.dart';
 import 'package:mute_music_app/src/core/audio/pcm_io.dart';
+import 'package:mute_music_app/src/core/constants/app_flags.dart';
+import 'package:mute_music_app/src/core/diagnostics/memory_logger.dart';
+import 'package:mute_music_app/src/data/local/device_memory_datasource.dart';
 import 'package:mute_music_app/src/data/local/music_separator.dart';
 
 /// Everything the worker needs, as plain values. Audio never crosses the
@@ -33,17 +36,27 @@ typedef SeparationBody =
 
 /// Reads the track, runs the model over it and writes the voices back out.
 Future<void> separateTrack(SeparationJob job, ChunkCallback onChunk) async {
+  final SeparationProbe? probe = AppFlags.diagnostics ? _memoryProbe() : null;
+  await probe?.call('read pcm (start)');
   final StereoAudio input = PcmIo.read(
     File(job.inputPcmPath),
     job.sampleRate,
     job.channels,
   );
-  final StereoAudio voice = await MusicSeparator().separate(
+  await probe?.call('after read pcm');
+  final StereoAudio voice = await MusicSeparator(probe: probe).separate(
     modelPath: job.modelPath,
     input: input,
     onProgress: onChunk,
   );
   PcmIo.write(File(job.outputPcmPath), voice.left, voice.right);
+  await probe?.call('after write pcm');
+}
+
+/// TEMPORARY: logs memory around each model call, tagged as the worker's.
+SeparationProbe _memoryProbe() {
+  final MemoryLogger logger = MemoryLogger(DeviceMemoryDatasource());
+  return (String label) => logger.mark('worker: $label');
 }
 
 /// Runs [SeparationBody] on its own isolate so the UI keeps drawing.

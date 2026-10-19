@@ -7,12 +7,25 @@ class MemoryReport {
     required this.nativeHeapMb,
     required this.deviceTotalMb,
     required this.heapLimitMb,
+    required this.deviceAvailableMb,
+    required this.lowMemoryThresholdMb,
+    required this.lowMemory,
   });
 
   final double footprintMb;
   final double nativeHeapMb;
   final double deviceTotalMb;
   final double heapLimitMb;
+
+  /// Free RAM on the whole device (Android). On iOS, what this app may still
+  /// allocate before jetsam kills it.
+  final double deviceAvailableMb;
+
+  /// Android starts killing apps once free RAM drops below this. -1 on iOS.
+  final double lowMemoryThresholdMb;
+
+  /// Android already considers the device low on memory.
+  final bool lowMemory;
 }
 
 class DeviceMemoryDatasource {
@@ -29,6 +42,9 @@ class DeviceMemoryDatasource {
       nativeHeapMb: at('nativeHeapMb'),
       deviceTotalMb: at('deviceTotalMb'),
       heapLimitMb: at('heapLimitMb'),
+      deviceAvailableMb: at('deviceAvailableMb'),
+      lowMemoryThresholdMb: at('lowMemoryThresholdMb'),
+      lowMemory: map?['lowMemory'] == true,
     );
   }
 }

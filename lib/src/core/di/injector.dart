@@ -5,6 +5,7 @@ import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/core/constants/app_flags.dart';
 import 'package:mute_music_app/src/core/constants/model_constants.dart';
 import 'package:mute_music_app/src/core/di/network_module.dart';
+import 'package:mute_music_app/src/core/diagnostics/memory_logger.dart';
 import 'package:mute_music_app/src/core/diagnostics/memory_probe.dart';
 import 'package:mute_music_app/src/data/local/device_memory_datasource.dart';
 import 'package:mute_music_app/src/data/local/audio_pipeline_datasource.dart';
@@ -94,5 +95,6 @@ void _setupDiagnostics() {
     ..registerLazySingleton<DeviceMemoryDatasource>(DeviceMemoryDatasource.new)
     ..registerLazySingleton<MemoryProbe>(
       () => MemoryProbe(injector(), injector(), injector()),
-    );
+    )
+    ..registerLazySingleton<MemoryLogger>(() => MemoryLogger(injector()));
 }

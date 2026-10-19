@@ -116,6 +116,8 @@ class MainActivity : FlutterActivity() {
             "nativeHeapMb" to Debug.getNativeHeapAllocatedSize() / 1048576.0,
             "deviceTotalMb" to device.totalMem / 1048576.0,
             "deviceAvailableMb" to device.availMem / 1048576.0,
+            // Below this free amount Android starts killing background apps.
+            "lowMemoryThresholdMb" to device.threshold / 1048576.0,
             "heapLimitMb" to manager.largeMemoryClass.toDouble(),
             "lowMemory" to device.lowMemory,
         )

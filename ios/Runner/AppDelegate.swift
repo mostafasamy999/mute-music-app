@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import os
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -58,7 +59,8 @@ import UIKit
             "footprintMb": footprint,
             "nativeHeapMb": -1,
             "deviceTotalMb": Double(ProcessInfo.processInfo.physicalMemory) / 1048576.0,
-            "deviceAvailableMb": -1,
+            "deviceAvailableMb": Double(os_proc_available_memory()) / 1048576.0,
+            "lowMemoryThresholdMb": -1,
             "heapLimitMb": -1,
             "lowMemory": false,
         ]

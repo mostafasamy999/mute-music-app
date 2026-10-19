@@ -1,30 +1,26 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:mute_music_app/src/core/audio/pcm_io.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/data/local/audio_pipeline_datasource.dart';
 import 'package:mute_music_app/src/data/local/model_storage.dart';
-import 'package:mute_music_app/src/data/local/music_separator.dart';
+import 'package:mute_music_app/src/data/local/separation_worker.dart';
+import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/repositories/music_removal_repository.dart';
 
 class MusicRemovalRepositoryImpl implements MusicRemovalRepository {
-  const MusicRemovalRepositoryImpl(
-    this._pipeline,
-    this._separator,
-    this._storage,
-  );
+  const MusicRemovalRepositoryImpl(this._pipeline, this._worker, this._storage);
 
   final AudioPipelineDatasource _pipeline;
-  final MusicSeparator _separator;
+  final SeparationWorker _worker;
   final ModelStorage _storage;
 
   @override
   Future<DataState<VideoAsset>> removeMusic(
     VideoAsset source, {
-    required void Function(double progress) onProgress,
+    required void Function(RemovalProgress progress) onProgress,
   }) async {
     if (!await _storage.isReady()) {
       return const DataFailed<VideoAsset>(AppFailure.modelMissing);
@@ -40,26 +36,30 @@ class MusicRemovalRepositoryImpl implements MusicRemovalRepository {
 
   Future<VideoAsset> _process(
     VideoAsset source,
-    void Function(double) onProgress,
+    void Function(RemovalProgress) onProgress,
   ) async {
+    onProgress(const RemovalProgress(RemovalStep.extract));
     final ExtractedAudio audio = await _pipeline.extract(source.path);
     final File pcm = File(audio.path);
     final File out = File('${audio.path}.voice.pcm');
     // Each PCM file is tens of MB, so they go on every path, not just success.
     try {
-      final StereoAudio input = PcmIo.read(
-        pcm,
-        audio.sampleRate,
-        audio.channels,
+      // Reading, separating and writing the PCM all happen off the UI
+      // isolate; only chunk counts come back.
+      await _worker.run(
+        SeparationJob(
+          inputPcmPath: pcm.path,
+          sampleRate: audio.sampleRate,
+          channels: audio.channels,
+          modelPath: (await _storage.modelFile()).path,
+          outputPcmPath: out.path,
+        ),
+        onChunk: (int done, int total) => onProgress(
+          RemovalProgress(RemovalStep.separate, done: done, total: total),
+        ),
       );
 
-      final StereoAudio voice = await _separator.separate(
-        modelPath: (await _storage.modelFile()).path,
-        input: input,
-        onProgress: onProgress,
-      );
-
-      PcmIo.write(out, voice.left, voice.right);
+      onProgress(const RemovalProgress(RemovalStep.build));
       final String video = await _pipeline.mux(
         videoPath: source.path,
         pcmPath: out.path,

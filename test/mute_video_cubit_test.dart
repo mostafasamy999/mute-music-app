@@ -5,6 +5,7 @@ import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
+import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
@@ -118,6 +119,105 @@ void main() {
     act: (MuteVideoCubit cubit) => cubit.removeMusic(),
     skip: 2,
     expect: () => <Matcher>[failedWith(AppFailure.musicRemovalFailed)],
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'remove music walks the steps in order, then clears them on success',
+    setUp: () {
+      when(() => ensureModel(onProgress: any(named: 'onProgress'))).thenAnswer((
+        Invocation call,
+      ) async {
+        (call.namedArguments[#onProgress] as void Function(double))(0.5);
+        return const DataSuccess<void>(null);
+      });
+      when(
+        () => removeMusic(any(), onProgress: any(named: 'onProgress')),
+      ).thenAnswer((Invocation call) async {
+        final void Function(RemovalProgress) report =
+            call.namedArguments[#onProgress] as void Function(RemovalProgress);
+        report(const RemovalProgress(RemovalStep.extract));
+        report(const RemovalProgress(RemovalStep.separate, done: 1, total: 2));
+        report(const RemovalProgress(RemovalStep.build));
+        return const DataSuccess<VideoAsset>(result);
+      });
+    },
+    build: build,
+    seed: () => const MuteVideoState(source: source),
+    act: (MuteVideoCubit cubit) => cubit.removeMusic(),
+    expect: () => <Matcher>[
+      isA<MuteVideoState>()
+          .having(
+            (MuteVideoState s) => s.removal,
+            'removal',
+            const RemovalProgress(RemovalStep.model),
+          )
+          .having((MuteVideoState s) => s.showsSteps, 'showsSteps', isTrue),
+      isA<MuteVideoState>().having(
+        (MuteVideoState s) => s.removal,
+        'removal',
+        const RemovalProgress(RemovalStep.model, done: 50, total: 100),
+      ),
+      isA<MuteVideoState>()
+          .having(
+            (MuteVideoState s) => s.status,
+            'status',
+            MuteVideoStatus.removingMusic,
+          )
+          .having(
+            (MuteVideoState s) => s.removal,
+            'removal',
+            const RemovalProgress(RemovalStep.extract),
+          ),
+      isA<MuteVideoState>()
+          .having(
+            (MuteVideoState s) => s.removal,
+            'removal',
+            const RemovalProgress(RemovalStep.separate, done: 1, total: 2),
+          )
+          .having((MuteVideoState s) => s.progress, 'progress', 0.5),
+      isA<MuteVideoState>().having(
+        (MuteVideoState s) => s.removal,
+        'removal',
+        const RemovalProgress(RemovalStep.build),
+      ),
+      isA<MuteVideoState>()
+          .having(
+            (MuteVideoState s) => s.status,
+            'status',
+            MuteVideoStatus.muted,
+          )
+          .having((MuteVideoState s) => s.removal, 'removal', isNull)
+          .having((MuteVideoState s) => s.showsSteps, 'showsSteps', isFalse),
+    ],
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'a failed removal drops the steps so the screen is not left mid-job',
+    setUp: () {
+      when(
+        () => ensureModel(onProgress: any(named: 'onProgress')),
+      ).thenAnswer((_) async => const DataSuccess<void>(null));
+      when(
+        () => removeMusic(any(), onProgress: any(named: 'onProgress')),
+      ).thenAnswer(
+        (_) async =>
+            const DataFailed<VideoAsset>(AppFailure.musicRemovalFailed),
+      );
+    },
+    build: build,
+    seed: () => const MuteVideoState(source: source),
+    act: (MuteVideoCubit cubit) => cubit.removeMusic(),
+    skip: 2,
+    expect: () => <Matcher>[
+      allOf(
+        failedWith(AppFailure.musicRemovalFailed),
+        isA<MuteVideoState>().having(
+          (MuteVideoState s) => s.removal,
+          'removal',
+          isNull,
+        ),
+      ),
+    ],
   );
 
   blocTest<MuteVideoCubit, MuteVideoState>(

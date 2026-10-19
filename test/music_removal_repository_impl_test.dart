@@ -9,13 +9,14 @@ import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/data/local/audio_pipeline_datasource.dart';
 import 'package:mute_music_app/src/data/local/model_storage.dart';
-import 'package:mute_music_app/src/data/local/music_separator.dart';
+import 'package:mute_music_app/src/data/local/separation_worker.dart';
 import 'package:mute_music_app/src/data/repositories/music_removal_repository_impl.dart';
+import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 
 class _MockPipeline extends Mock implements AudioPipelineDatasource {}
 
-class _MockSeparator extends Mock implements MusicSeparator {}
+class _MockWorker extends Mock implements SeparationWorker {}
 
 class _MockStorage extends Mock implements ModelStorage {}
 
@@ -25,23 +26,31 @@ void main() {
 
   late Directory directory;
   late _MockPipeline pipeline;
-  late _MockSeparator separator;
+  late _MockWorker worker;
   late MusicRemovalRepositoryImpl repository;
 
   setUpAll(
-    () => registerFallbackValue(StereoAudio(Float64List(0), Float64List(0))),
+    () => registerFallbackValue(
+      const SeparationJob(
+        inputPcmPath: '',
+        sampleRate: 0,
+        channels: 0,
+        modelPath: '',
+        outputPcmPath: '',
+      ),
+    ),
   );
 
   setUp(() {
     directory = Directory.systemTemp.createTempSync('removal_test');
     pipeline = _MockPipeline();
-    separator = _MockSeparator();
+    worker = _MockWorker();
     final _MockStorage storage = _MockStorage();
     when(storage.isReady).thenAnswer((_) async => true);
     when(
       storage.modelFile,
     ).thenAnswer((_) async => File('${directory.path}/model.onnx'));
-    repository = MusicRemovalRepositoryImpl(pipeline, separator, storage);
+    repository = MusicRemovalRepositoryImpl(pipeline, worker, storage);
 
     // Extraction writes a real one-second stereo PCM file, like the platform.
     final File pcm = File('${directory.path}/audio.pcm');
@@ -67,25 +76,26 @@ void main() {
       .where((String path) => path.endsWith('.pcm'))
       .toList();
 
-  void separatorReturns() =>
-      when(
-        () => separator.separate(
-          modelPath: any(named: 'modelPath'),
-          input: any(named: 'input'),
-          onProgress: any(named: 'onProgress'),
-        ),
-      ).thenAnswer(
-        (Invocation call) async => call.namedArguments[#input] as StereoAudio,
-      );
+  Future<void> Function(Invocation) writesVoice(int chunks) =>
+      (Invocation call) async {
+        final SeparationJob job =
+            call.positionalArguments.first as SeparationJob;
+        final ChunkCallback onChunk =
+            call.namedArguments[#onChunk] as ChunkCallback;
+        for (int done = 0; done <= chunks; done++) {
+          onChunk(done, chunks);
+        }
+        File(job.outputPcmPath).writeAsBytesSync(<int>[0, 0, 0, 0]);
+      };
 
-  test('a separator that throws leaves no PCM files', () async {
+  void workerReturns() => when(
+    () => worker.run(any(), onChunk: any(named: 'onChunk')),
+  ).thenAnswer(writesVoice(1));
+
+  test('a worker that fails leaves no PCM files', () async {
     when(
-      () => separator.separate(
-        modelPath: any(named: 'modelPath'),
-        input: any(named: 'input'),
-        onProgress: any(named: 'onProgress'),
-      ),
-    ).thenThrow(StateError('out of memory'));
+      () => worker.run(any(), onChunk: any(named: 'onChunk')),
+    ).thenThrow(const SeparationException('out of memory'));
 
     final DataState<VideoAsset> result = await repository.removeMusic(
       source,
@@ -100,7 +110,7 @@ void main() {
   });
 
   test('a mux that fails leaves no PCM files', () async {
-    separatorReturns();
+    workerReturns();
     when(
       () => pipeline.mux(
         videoPath: any(named: 'videoPath'),
@@ -118,7 +128,7 @@ void main() {
   });
 
   test('a success returns the muxed video and leaves no PCM files', () async {
-    separatorReturns();
+    workerReturns();
     final File video = File('${directory.path}/nomusic.mp4')
       ..writeAsBytesSync(<int>[1, 2, 3]);
     when(
@@ -139,4 +149,55 @@ void main() {
     );
     expect(pcmFiles(), isEmpty);
   });
+
+  test('reports extract, every chunk, then build — in order', () async {
+    when(
+      () => worker.run(any(), onChunk: any(named: 'onChunk')),
+    ).thenAnswer(writesVoice(2));
+    final File video = File('${directory.path}/nomusic.mp4')
+      ..writeAsBytesSync(<int>[1]);
+    when(
+      () => pipeline.mux(
+        videoPath: any(named: 'videoPath'),
+        pcmPath: any(named: 'pcmPath'),
+      ),
+    ).thenAnswer((_) async => video.path);
+    final List<RemovalProgress> steps = <RemovalProgress>[];
+
+    await repository.removeMusic(source, onProgress: steps.add);
+
+    expect(steps, const <RemovalProgress>[
+      RemovalProgress(RemovalStep.extract),
+      RemovalProgress(RemovalStep.separate, total: 2),
+      RemovalProgress(RemovalStep.separate, done: 1, total: 2),
+      RemovalProgress(RemovalStep.separate, done: 2, total: 2),
+      RemovalProgress(RemovalStep.build),
+    ]);
+  });
+
+  test(
+    'passes the extracted format and both PCM paths to the worker',
+    () async {
+      workerReturns();
+      when(
+        () => pipeline.mux(
+          videoPath: any(named: 'videoPath'),
+          pcmPath: any(named: 'pcmPath'),
+        ),
+      ).thenThrow(PlatformException(code: 'mux_failed'));
+
+      await repository.removeMusic(source, onProgress: (_) {});
+
+      final SeparationJob job =
+          verify(
+                () => worker.run(captureAny(), onChunk: any(named: 'onChunk')),
+              ).captured.single
+              as SeparationJob;
+      expect(job.inputPcmPath, '${directory.path}/audio.pcm');
+      expect(job.outputPcmPath, '${directory.path}/audio.pcm.voice.pcm');
+      expect(job.sampleRate, PcmIo.targetRate);
+      expect(job.channels, 2);
+      expect(job.modelPath, '${directory.path}/model.onnx');
+    },
+  );
 }

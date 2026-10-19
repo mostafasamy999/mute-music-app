@@ -14,7 +14,7 @@ class MusicSeparator {
   Future<StereoAudio> separate({
     required String modelPath,
     required StereoAudio input,
-    required void Function(double progress) onProgress,
+    required void Function(int done, int total) onProgress,
   }) async {
     final OnnxRuntime runtime = OnnxRuntime();
     final OrtSession session = await runtime.createSession(
@@ -47,7 +47,7 @@ class MusicSeparator {
   Future<StereoAudio> _runChunks(
     OrtSession session,
     StereoAudio input,
-    void Function(double) onProgress,
+    void Function(int done, int total) onProgress,
   ) async {
     final int samples = input.length;
     final int padded = ChunkWindow.paddedLength(samples);
@@ -57,6 +57,7 @@ class MusicSeparator {
     final Float64List outRight = Float64List(samples);
     final MdxTensor codec = MdxTensor();
     final int total = ChunkWindow.chunkCount(samples);
+    onProgress(0, total);
 
     for (int index = 0; index < total; index++) {
       final int start = index * ChunkWindow.genSize;
@@ -68,7 +69,7 @@ class MusicSeparator {
       );
       ChunkWindow.merge(outLeft, piece[0], start, compensate);
       ChunkWindow.merge(outRight, piece[1], start, compensate);
-      onProgress((index + 1) / total);
+      onProgress(index + 1, total);
     }
     return StereoAudio(outLeft, outRight);
   }

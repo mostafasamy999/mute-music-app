@@ -283,6 +283,66 @@ class S {
       args: [],
     );
   }
+
+  /// `Get the AI model`
+  String get stepModel {
+    return Intl.message(
+      'Get the AI model',
+      name: 'stepModel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Read the audio`
+  String get stepExtract {
+    return Intl.message(
+      'Read the audio',
+      name: 'stepExtract',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Separate the voices`
+  String get stepSeparate {
+    return Intl.message(
+      'Separate the voices',
+      name: 'stepSeparate',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Build the video`
+  String get stepBuild {
+    return Intl.message(
+      'Build the video',
+      name: 'stepBuild',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Part {current} of {total}`
+  String stepPart(int current, int total) {
+    return Intl.message(
+      'Part $current of $total',
+      name: 'stepPart',
+      desc: '',
+      args: [current, total],
+    );
+  }
+
+  /// `{percent}%`
+  String stepPercent(int percent) {
+    return Intl.message(
+      '$percent%',
+      name: 'stepPercent',
+      desc: '',
+      args: [percent],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

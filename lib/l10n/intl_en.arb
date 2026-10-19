@@ -25,5 +25,28 @@
   "readyToSaveMusic": "Music removed. You can save it now.",
   "errorModelMissing": "The AI model is not ready yet. Try again.",
   "errorNoAudioTrack": "This video has no sound to work on.",
-  "errorMusicRemoval": "Could not remove the music from this video."
+  "errorMusicRemoval": "Could not remove the music from this video.",
+  "stepModel": "Get the AI model",
+  "stepExtract": "Read the audio",
+  "stepSeparate": "Separate the voices",
+  "stepBuild": "Build the video",
+  "stepPart": "Part {current} of {total}",
+  "@stepPart": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "stepPercent": "{percent}%",
+  "@stepPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  }
 }

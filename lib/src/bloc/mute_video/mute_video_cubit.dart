@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
+import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
@@ -68,8 +69,14 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     final VideoAsset? source = state.source;
     if (source == null) return;
     if (!await _prepareModel()) return;
-    _set(state.copyWith(status: MuteVideoStatus.removingMusic, progress: 0));
-    switch (await _removeMusic(source, onProgress: _reportProgress)) {
+    _set(
+      state.copyWith(
+        status: MuteVideoStatus.removingMusic,
+        progress: 0,
+        removal: const RemovalProgress(RemovalStep.extract),
+      ),
+    );
+    switch (await _removeMusic(source, onProgress: _reportStep)) {
       case DataSuccess<VideoAsset>(:final VideoAsset data):
         await _showResult(data, musicOnly: true);
       case DataFailed<VideoAsset>(:final AppFailure failure):
@@ -124,9 +131,15 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   }
 
   Future<bool> _prepareModel() async {
-    _set(state.copyWith(status: MuteVideoStatus.preparingModel, progress: 0));
+    _set(
+      state.copyWith(
+        status: MuteVideoStatus.preparingModel,
+        progress: 0,
+        removal: const RemovalProgress(RemovalStep.model),
+      ),
+    );
     final DataState<void> result = await _ensureModel(
-      onProgress: _reportProgress,
+      onProgress: _reportDownload,
     );
     if (result is DataFailed<void>) {
       _fail(result.failure);
@@ -135,8 +148,22 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     return true;
   }
 
-  void _reportProgress(double value) =>
-      _set(state.copyWith(progress: value.clamp(0, 1)));
+  void _reportDownload(double value) {
+    final double clamped = value.clamp(0, 1);
+    _set(
+      state.copyWith(
+        progress: clamped,
+        removal: RemovalProgress(
+          RemovalStep.model,
+          done: (clamped * 100).round(),
+          total: 100,
+        ),
+      ),
+    );
+  }
+
+  void _reportStep(RemovalProgress step) =>
+      _set(state.copyWith(progress: step.fraction ?? 0, removal: step));
 
   MuteVideoStatus get _idleStatus =>
       state.muted == null ? MuteVideoStatus.initial : MuteVideoStatus.muted;

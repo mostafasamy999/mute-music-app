@@ -9,7 +9,7 @@ import 'package:mute_music_app/src/core/diagnostics/memory_probe.dart';
 import 'package:mute_music_app/src/data/local/device_memory_datasource.dart';
 import 'package:mute_music_app/src/data/local/audio_pipeline_datasource.dart';
 import 'package:mute_music_app/src/data/local/model_storage.dart';
-import 'package:mute_music_app/src/data/local/music_separator.dart';
+import 'package:mute_music_app/src/data/local/separation_worker.dart';
 import 'package:mute_music_app/src/data/local/temp_files_datasource.dart';
 import 'package:mute_music_app/src/data/local/video_mute_datasource.dart';
 import 'package:mute_music_app/src/data/remote/model_download_service.dart';
@@ -50,7 +50,7 @@ void setupInjector() {
     ..registerLazySingleton<AudioPipelineDatasource>(
       AudioPipelineDatasource.new,
     )
-    ..registerLazySingleton<MusicSeparator>(MusicSeparator.new)
+    ..registerLazySingleton<SeparationWorker>(SeparationWorker.new)
     ..registerLazySingleton<MusicRemovalRepository>(
       () => MusicRemovalRepositoryImpl(injector(), injector(), injector()),
     )

@@ -1,4 +1,5 @@
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
+import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 
 enum MuteVideoStatus {
@@ -21,6 +22,7 @@ class MuteVideoState {
     this.failure,
     this.progress = 0,
     this.musicOnly = false,
+    this.removal,
   });
 
   final MuteVideoStatus status;
@@ -33,6 +35,9 @@ class MuteVideoState {
 
   /// True when the result kept the voices instead of dropping all sound.
   final bool musicOnly;
+
+  /// The current step of "Remove music only". Null when that job isn't running.
+  final RemovalProgress? removal;
 
   bool get isBusy => const <MuteVideoStatus>{
     MuteVideoStatus.picking,
@@ -48,8 +53,12 @@ class MuteVideoState {
       status == MuteVideoStatus.preparingModel ||
       status == MuteVideoStatus.removingMusic;
 
+  /// The music removal job shows as a list of steps instead of one line.
+  bool get showsSteps => showsProgress && removal != null;
+
   /// [failure] is not carried over — it clears on every transition unless the
-  /// caller passes a new one.
+  /// caller passes a new one. [removal] is kept only while the music removal
+  /// job runs, so it can't leak into a later status.
   MuteVideoState copyWith({
     MuteVideoStatus? status,
     VideoAsset? source,
@@ -57,14 +66,22 @@ class MuteVideoState {
     AppFailure? failure,
     double? progress,
     bool? musicOnly,
-  }) => MuteVideoState(
-    status: status ?? this.status,
-    source: source ?? this.source,
-    muted: muted ?? this.muted,
-    failure: failure,
-    progress: progress ?? this.progress,
-    musicOnly: musicOnly ?? this.musicOnly,
-  );
+    RemovalProgress? removal,
+  }) {
+    final MuteVideoStatus next = status ?? this.status;
+    final bool removing =
+        next == MuteVideoStatus.preparingModel ||
+        next == MuteVideoStatus.removingMusic;
+    return MuteVideoState(
+      status: next,
+      source: source ?? this.source,
+      muted: muted ?? this.muted,
+      failure: failure,
+      progress: progress ?? this.progress,
+      musicOnly: musicOnly ?? this.musicOnly,
+      removal: removing ? removal ?? this.removal : null,
+    );
+  }
 
   /// A fresh pick drops any previously produced result.
   MuteVideoState withNewSource(VideoAsset source) =>
@@ -78,9 +95,10 @@ class MuteVideoState {
       other.muted == muted &&
       other.failure == failure &&
       other.progress == progress &&
-      other.musicOnly == musicOnly;
+      other.musicOnly == musicOnly &&
+      other.removal == removal;
 
   @override
   int get hashCode =>
-      Object.hash(status, source, muted, failure, progress, musicOnly);
+      Object.hash(status, source, muted, failure, progress, musicOnly, removal);
 }

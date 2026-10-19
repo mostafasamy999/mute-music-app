@@ -25,5 +25,11 @@
   "readyToSaveMusic": "تمت إزالة الموسيقى. يمكنك حفظه الآن.",
   "errorModelMissing": "نموذج الذكاء الاصطناعي غير جاهز. حاول مرة أخرى.",
   "errorNoAudioTrack": "هذا الفيديو لا يحتوي على صوت.",
-  "errorMusicRemoval": "تعذرت إزالة الموسيقى من هذا الفيديو."
+  "errorMusicRemoval": "تعذرت إزالة الموسيقى من هذا الفيديو.",
+  "stepModel": "تحميل نموذج الذكاء الاصطناعي",
+  "stepExtract": "قراءة الصوت",
+  "stepSeparate": "فصل الأصوات",
+  "stepBuild": "تجهيز الفيديو",
+  "stepPart": "الجزء {current} من {total}",
+  "stepPercent": "{percent}%"
 }

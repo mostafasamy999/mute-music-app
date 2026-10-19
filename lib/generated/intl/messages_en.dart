@@ -20,6 +20,10 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
+  static String m0(current, total) => "Part ${current} of ${total}";
+
+  static String m1(percent) => "${percent}%";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "appTitle": MessageLookupByLibrary.simpleMessage("Mute Video"),
@@ -79,6 +83,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Saved to your gallery",
     ),
     "saving": MessageLookupByLibrary.simpleMessage("Saving..."),
+    "stepBuild": MessageLookupByLibrary.simpleMessage("Build the video"),
+    "stepExtract": MessageLookupByLibrary.simpleMessage("Read the audio"),
+    "stepModel": MessageLookupByLibrary.simpleMessage("Get the AI model"),
+    "stepPart": m0,
+    "stepPercent": m1,
+    "stepSeparate": MessageLookupByLibrary.simpleMessage("Separate the voices"),
     "working": MessageLookupByLibrary.simpleMessage("Removing sound..."),
   };
 }

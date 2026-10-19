@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mute_music_app/generated/l10n.dart';
 import 'package:mute_music_app/src/config/routes/routes_manager.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
 import 'package:mute_music_app/src/core/di/injector.dart';
+import 'package:mute_music_app/src/domain/use_cases/discard_leftovers_use_case.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   setupInjector();
+  unawaited(injector<DiscardLeftoversUseCase>()());
   runApp(const MuteMusicApp());
 }
 

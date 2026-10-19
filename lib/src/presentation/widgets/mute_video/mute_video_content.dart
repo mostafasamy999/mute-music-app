@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mute_music_app/generated/l10n.dart';
 import 'package:mute_music_app/src/config/routes/routes_manager.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
+import 'package:mute_music_app/src/core/constants/app_flags.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/pick_video_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_music_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_sound_button.dart';
@@ -19,11 +20,12 @@ class MuteVideoContent extends StatelessWidget {
       title: Text(S.of(context).appTitle),
       // TEMPORARY: entry to the on-device memory probe. Remove with it.
       actions: <Widget>[
-        IconButton(
-          icon: const Icon(Icons.memory),
-          onPressed: () =>
-              Navigator.of(context).pushNamed(Routes.memoryProbe),
-        ),
+        if (AppFlags.diagnostics)
+          IconButton(
+            icon: const Icon(Icons.memory),
+            onPressed: () =>
+                Navigator.of(context).pushNamed(Routes.memoryProbe),
+          ),
       ],
     ),
     body: SafeArea(

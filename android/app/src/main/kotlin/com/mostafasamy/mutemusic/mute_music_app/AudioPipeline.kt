@@ -24,25 +24,45 @@ object AudioPipeline {
 
     fun extractToPcm(sourcePath: String, output: File): PcmInfo {
         val extractor = MediaExtractor()
-        extractor.setDataSource(sourcePath)
-        val track = findTrack(extractor, "audio/") ?: throw NoAudioTrackException()
-        val format = extractor.getTrackFormat(track)
-        extractor.selectTrack(track)
+        var codec: MediaCodec? = null
+        // Codec instances are a scarce system resource, and a half-written
+        // PCM file is tens of MB, so both go on every path.
+        try {
+            extractor.setDataSource(sourcePath)
+            val track = findTrack(extractor, "audio/") ?: throw NoAudioTrackException()
+            val format = extractor.getTrackFormat(track)
+            extractor.selectTrack(track)
 
-        val sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
-        val channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
-        // Deliberately not asking for float output. Decoders vary in whether
-        // they honour it and whether they report it back, and guessing wrong
-        // means reading the bytes as the wrong type, which sounds like noise.
+            val sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+            val channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+            // Deliberately not asking for float output. Decoders vary in whether
+            // they honour it and whether they report it back, and guessing wrong
+            // means reading the bytes as the wrong type, which sounds like noise.
 
-        val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME)!!)
-        codec.configure(format, null, null, 0)
-        codec.start()
-        FileOutputStream(output).use { stream ->
-            decodeInto(extractor, codec, stream)
+            val decoder = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME)!!)
+                .also { codec = it }
+            decoder.configure(format, null, null, 0)
+            decoder.start()
+            FileOutputStream(output).use { stream ->
+                decodeInto(extractor, decoder, stream)
+            }
+            decoder.stop()
+            return PcmInfo(output.absolutePath, sampleRate, channels)
+        } catch (error: Exception) {
+            output.delete()
+            throw error
+        } finally {
+            releaseQuietly { codec?.release() }
+            releaseQuietly { extractor.release() }
         }
-        codec.stop(); codec.release(); extractor.release()
-        return PcmInfo(output.absolutePath, sampleRate, channels)
+    }
+
+    /** Cleanup must never replace the error that got us here. */
+    private inline fun releaseQuietly(release: () -> Unit) {
+        try {
+            release()
+        } catch (_: Exception) {
+        }
     }
 
     private fun decodeInto(
@@ -133,22 +153,36 @@ object AudioPipeline {
         outputDir: File,
     ): String {
         val output = File(outputDir, "nomusic_${System.currentTimeMillis()}.mp4")
-        val muxer = MediaMuxer(output.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-        val extractor = MediaExtractor().apply { setDataSource(videoPath) }
-        val videoTrack = findTrack(extractor, "video/") ?: throw NoVideoTrackException()
-        val videoFormat = extractor.getTrackFormat(videoTrack)
-        extractor.selectTrack(videoTrack)
+        val extractor = MediaExtractor()
+        var muxer: MediaMuxer? = null
+        var encoder: MediaCodec? = null
+        // Same rule as extractToPcm: release everything, and never leave a
+        // half-written video behind.
+        try {
+            extractor.setDataSource(videoPath)
+            val videoTrack = findTrack(extractor, "video/") ?: throw NoVideoTrackException()
+            val videoFormat = extractor.getTrackFormat(videoTrack)
+            extractor.selectTrack(videoTrack)
 
-        val encoder = createAacEncoder(sampleRate, channels)
-        val outVideo = muxer.addTrack(videoFormat)
-        var outAudio = -1
+            val writer = MediaMuxer(output.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+                .also { muxer = it }
+            val aac = createAacEncoder(sampleRate, channels).also { encoder = it }
+            val outVideo = writer.addTrack(videoFormat)
 
-        muxer.setOrientationHint(VideoMuter.rotationOf(videoPath))
-        encoder.start()
-        outAudio = encodeAndMux(encoder, File(pcmPath), muxer, outVideo, extractor, videoFormat)
-        encoder.stop(); encoder.release()
-        muxer.stop(); muxer.release(); extractor.release()
-        return output.absolutePath
+            writer.setOrientationHint(VideoMuter.rotationOf(videoPath))
+            aac.start()
+            encodeAndMux(aac, File(pcmPath), writer, outVideo, extractor, videoFormat)
+            aac.stop()
+            writer.stop()
+            return output.absolutePath
+        } catch (error: Exception) {
+            output.delete()
+            throw error
+        } finally {
+            releaseQuietly { encoder?.release() }
+            releaseQuietly { muxer?.release() }
+            releaseQuietly { extractor.release() }
+        }
     }
 
     private fun createAacEncoder(sampleRate: Int, channels: Int): MediaCodec {

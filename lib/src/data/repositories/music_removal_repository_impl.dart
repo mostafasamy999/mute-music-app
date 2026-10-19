@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:flutter_onnxruntime/flutter_onnxruntime.dart';
 import 'package:mute_music_app/src/core/audio/pcm_io.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
@@ -45,41 +44,30 @@ class MusicRemovalRepositoryImpl implements MusicRemovalRepository {
   ) async {
     final ExtractedAudio audio = await _pipeline.extract(source.path);
     final File pcm = File(audio.path);
-    final StereoAudio input = PcmIo.read(
-      pcm,
-      audio.sampleRate,
-      audio.channels,
-    );
-
-    final StereoAudio voice = await _separator.separate(
-      modelPath: (await _storage.modelFile()).path,
-      input: input,
-      provider: await _bestProvider(),
-      onProgress: onProgress,
-    );
-
     final File out = File('${audio.path}.voice.pcm');
-    PcmIo.write(out, voice.left, voice.right);
-    final String video = await _pipeline.mux(
-      videoPath: source.path,
-      pcmPath: out.path,
-    );
-    _cleanUp(<File>[pcm, out]);
-    return VideoAsset(path: video, sizeInBytes: File(video).lengthSync());
-  }
+    // Each PCM file is tens of MB, so they go on every path, not just success.
+    try {
+      final StereoAudio input = PcmIo.read(
+        pcm,
+        audio.sampleRate,
+        audio.channels,
+      );
 
-  /// XNNPACK is several times faster than plain CPU on phone hardware.
-  Future<OrtProvider> _bestProvider() async {
-    final List<OrtProvider> available = await OnnxRuntime()
-        .getAvailableProviders();
-    for (final OrtProvider candidate in <OrtProvider>[
-      OrtProvider.XNNPACK,
-      OrtProvider.CORE_ML,
-      OrtProvider.CPU,
-    ]) {
-      if (available.contains(candidate)) return candidate;
+      final StereoAudio voice = await _separator.separate(
+        modelPath: (await _storage.modelFile()).path,
+        input: input,
+        onProgress: onProgress,
+      );
+
+      PcmIo.write(out, voice.left, voice.right);
+      final String video = await _pipeline.mux(
+        videoPath: source.path,
+        pcmPath: out.path,
+      );
+      return VideoAsset(path: video, sizeInBytes: File(video).lengthSync());
+    } finally {
+      _cleanUp(<File>[pcm, out]);
     }
-    return OrtProvider.CPU;
   }
 
   AppFailure _failureFor(String code) => switch (code) {

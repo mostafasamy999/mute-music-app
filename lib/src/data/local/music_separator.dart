@@ -14,13 +14,13 @@ class MusicSeparator {
   Future<StereoAudio> separate({
     required String modelPath,
     required StereoAudio input,
-    required OrtProvider provider,
     required void Function(double progress) onProgress,
   }) async {
-    final OrtSession session = await OnnxRuntime().createSession(
+    final OnnxRuntime runtime = OnnxRuntime();
+    final OrtSession session = await runtime.createSession(
       modelPath,
       options: OrtSessionOptions(
-        providers: <OrtProvider>[provider, OrtProvider.CPU],
+        providers: <OrtProvider>[await _bestProvider(runtime), OrtProvider.CPU],
         useArena: false,
       ),
     );
@@ -29,6 +29,19 @@ class MusicSeparator {
     } finally {
       await session.close();
     }
+  }
+
+  /// XNNPACK is several times faster than plain CPU on phone hardware.
+  Future<OrtProvider> _bestProvider(OnnxRuntime runtime) async {
+    final List<OrtProvider> available = await runtime.getAvailableProviders();
+    for (final OrtProvider candidate in <OrtProvider>[
+      OrtProvider.XNNPACK,
+      OrtProvider.CORE_ML,
+      OrtProvider.CPU,
+    ]) {
+      if (available.contains(candidate)) return candidate;
+    }
+    return OrtProvider.CPU;
   }
 
   Future<StereoAudio> _runChunks(
@@ -70,9 +83,9 @@ class MusicSeparator {
       codec.pack(left, right),
       <int>[1, MdxTensor.channels, MdxTensor.dimF, MdxTensor.dimT],
     );
-    final Map<String, OrtValue> result = await session.run(
-      <String, OrtValue>{ModelConstants.inputName: value},
-    );
+    final Map<String, OrtValue> result = await session.run(<String, OrtValue>{
+      ModelConstants.inputName: value,
+    });
     final OrtValue output = result.values.first;
     final List<Float64List> waves = codec.unpack(await _floats(output));
     await value.dispose();
@@ -82,8 +95,6 @@ class MusicSeparator {
 
   Future<Float32List> _floats(OrtValue value) async {
     final List<dynamic> raw = await value.asFlattenedList();
-    return raw is Float32List
-        ? raw
-        : Float32List.fromList(raw.cast<double>());
+    return raw is Float32List ? raw : Float32List.fromList(raw.cast<double>());
   }
 }

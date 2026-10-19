@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:mute_music_app/src/core/constants/model_constants.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
@@ -21,8 +20,10 @@ class SeparationModelRepositoryImpl implements SeparationModelRepository {
   Future<DataState<void>> ensureDownloaded({
     required void Function(double progress) onProgress,
   }) async {
-    if (await _storage.isReady()) return const DataSuccess<void>(null);
+    // The network, the disk and the directory lookup can all throw, and an
+    // escaped exception would leave the screen busy forever.
     try {
+      if (await _storage.isReady()) return const DataSuccess<void>(null);
       await _storage.deleteBrokenFiles();
       final File partial = await _storage.partialFile();
       await _service.download(
@@ -30,9 +31,9 @@ class SeparationModelRepositoryImpl implements SeparationModelRepository {
         target: partial,
         onProgress: onProgress,
       );
-      return _promote(partial);
-    } on DioException {
-      await _storage.deleteBrokenFiles();
+      return await _promote(partial);
+    } on Object {
+      await _deleteBrokenFilesQuietly();
       return const DataFailed<void>(AppFailure.modelDownloadFailed);
     }
   }
@@ -42,11 +43,20 @@ class SeparationModelRepositoryImpl implements SeparationModelRepository {
   Future<DataState<void>> _promote(File partial) async {
     if (!partial.existsSync() ||
         partial.lengthSync() != ModelConstants.vocalsModelSizeInBytes) {
-      await _storage.deleteBrokenFiles();
+      await _deleteBrokenFilesQuietly();
       return const DataFailed<void>(AppFailure.modelDownloadFailed);
     }
     final File target = await _storage.modelFile();
     await partial.rename(target.path);
     return const DataSuccess<void>(null);
+  }
+
+  /// Runs on a path that is already failing, so it must not throw again.
+  Future<void> _deleteBrokenFilesQuietly() async {
+    try {
+      await _storage.deleteBrokenFiles();
+    } on Object {
+      // The next attempt deletes them again before downloading.
+    }
   }
 }

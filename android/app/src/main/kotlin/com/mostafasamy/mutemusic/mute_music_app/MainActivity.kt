@@ -93,6 +93,8 @@ class MainActivity : FlutterActivity() {
                     videoPath, pcmPath, sampleRate, channels, cacheDir
                 )
                 mainHandler.post { result.success(path) }
+            } catch (error: NoVideoTrackException) {
+                mainHandler.post { result.error("no_video_track", error.message, null) }
             } catch (error: Exception) {
                 mainHandler.post { result.error("mux_failed", error.message, null) }
             }

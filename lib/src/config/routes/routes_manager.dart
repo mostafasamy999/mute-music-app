@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mute_music_app/src/core/constants/app_flags.dart';
 import 'package:mute_music_app/src/presentation/screens/memory_probe_screen.dart';
 import 'package:mute_music_app/src/presentation/screens/mute_video_screen.dart';
 
 abstract final class Routes {
   static const String muteVideo = '/';
 
-  /// TEMPORARY: on-device diagnostics.
+  /// TEMPORARY: on-device diagnostics. Debug and profile builds only.
   static const String memoryProbe = '/memory-probe';
 }
 
@@ -14,7 +15,10 @@ abstract final class RoutesManager {
   static Route<void> onGenerateRoute(RouteSettings settings) =>
       switch (settings.name) {
         Routes.muteVideo => _page(const MuteVideoScreen(), settings),
-        Routes.memoryProbe => _page(const MemoryProbeScreen(), settings),
+        Routes.memoryProbe when AppFlags.diagnostics => _page(
+          const MemoryProbeScreen(),
+          settings,
+        ),
         _ => _page(const MuteVideoScreen(), settings),
       };
 

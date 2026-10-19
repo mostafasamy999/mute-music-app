@@ -22,6 +22,15 @@ class _TempStorage extends ModelStorage {
   Future<File> partialFile() async => File('${directory.path}/model.onnx.part');
 }
 
+/// A disk that fails as soon as the download needs a file.
+class _BrokenStorage extends _TempStorage {
+  _BrokenStorage(super.directory);
+
+  @override
+  Future<File> partialFile() async =>
+      throw const FileSystemException('disk full');
+}
+
 /// Writes [bytes] worth of file instead of hitting the network.
 class _FakeDownload extends ModelDownloadService {
   _FakeDownload(this.bytes) : super(Dio());
@@ -65,9 +74,10 @@ void main() {
     );
     final List<double> progress = <double>[];
 
-    final DataState<void> result =
-        await SeparationModelRepositoryImpl(_TempStorage(directory), service)
-            .ensureDownloaded(onProgress: progress.add);
+    final DataState<void> result = await SeparationModelRepositoryImpl(
+      _TempStorage(directory),
+      service,
+    ).ensureDownloaded(onProgress: progress.add);
 
     expect(result, isA<DataSuccess<void>>());
     expect(File('${directory.path}/model.onnx').existsSync(), isTrue);
@@ -78,9 +88,10 @@ void main() {
   test('a truncated download fails and leaves nothing behind', () async {
     final _FakeDownload service = _FakeDownload(1024);
 
-    final DataState<void> result =
-        await SeparationModelRepositoryImpl(_TempStorage(directory), service)
-            .ensureDownloaded(onProgress: (_) {});
+    final DataState<void> result = await SeparationModelRepositoryImpl(
+      _TempStorage(directory),
+      service,
+    ).ensureDownloaded(onProgress: (_) {});
 
     expect(result, isA<DataFailed<void>>());
     expect(
@@ -97,11 +108,24 @@ void main() {
     );
     final _FakeDownload service = _FakeDownload(0);
 
-    final DataState<void> result =
-        await SeparationModelRepositoryImpl(_TempStorage(directory), service)
-            .ensureDownloaded(onProgress: (_) {});
+    final DataState<void> result = await SeparationModelRepositoryImpl(
+      _TempStorage(directory),
+      service,
+    ).ensureDownloaded(onProgress: (_) {});
 
     expect(result, isA<DataSuccess<void>>());
     expect(service.called, isFalse);
+  });
+
+  test('a disk error fails instead of throwing', () async {
+    final DataState<void> result = await SeparationModelRepositoryImpl(
+      _BrokenStorage(directory),
+      _FakeDownload(0),
+    ).ensureDownloaded(onProgress: (_) {});
+
+    expect(
+      (result as DataFailed<void>).failure,
+      AppFailure.modelDownloadFailed,
+    );
   });
 }

@@ -12,6 +12,7 @@ import 'package:mute_music_app/src/data/local/device_memory_datasource.dart';
 import 'package:mute_music_app/src/data/local/model_storage.dart';
 import 'package:mute_music_app/src/data/local/separation_worker.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// TEMPORARY. Where does separation memory go, and does it come back?
 ///
@@ -27,7 +28,7 @@ const String _mode = String.fromEnvironment('MODE', defaultValue: 'worker');
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(setupInjector);
+  setUpAll(() async => setupInjector(await SharedPreferences.getInstance()));
 
   testWidgets('memory around separation ($_mode)', (WidgetTester tester) async {
     final MemoryLogger log = MemoryLogger(DeviceMemoryDatasource());

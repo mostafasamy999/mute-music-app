@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mute_music_app/src/bloc/language/language_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/core/constants/app_flags.dart';
 import 'package:mute_music_app/src/core/constants/model_constants.dart';
@@ -9,14 +10,17 @@ import 'package:mute_music_app/src/core/diagnostics/memory_logger.dart';
 import 'package:mute_music_app/src/core/diagnostics/memory_probe.dart';
 import 'package:mute_music_app/src/data/local/device_memory_datasource.dart';
 import 'package:mute_music_app/src/data/local/audio_pipeline_datasource.dart';
+import 'package:mute_music_app/src/data/local/language_storage.dart';
 import 'package:mute_music_app/src/data/local/model_storage.dart';
 import 'package:mute_music_app/src/data/local/separation_worker.dart';
 import 'package:mute_music_app/src/data/local/temp_files_datasource.dart';
 import 'package:mute_music_app/src/data/local/video_mute_datasource.dart';
 import 'package:mute_music_app/src/data/remote/model_download_service.dart';
+import 'package:mute_music_app/src/data/repositories/language_repository_impl.dart';
 import 'package:mute_music_app/src/data/repositories/music_removal_repository_impl.dart';
 import 'package:mute_music_app/src/data/repositories/separation_model_repository_impl.dart';
 import 'package:mute_music_app/src/data/repositories/video_repository_impl.dart';
+import 'package:mute_music_app/src/domain/repositories/language_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/music_removal_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/separation_model_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/video_repository.dart';
@@ -24,16 +28,37 @@ import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_leftovers_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/get_language_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/pick_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/set_language_use_case.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GetIt injector = GetIt.instance;
 
-void setupInjector() {
+/// [prefs] is loaded before runApp so the saved language is ready for the
+/// first frame.
+void setupInjector(SharedPreferences prefs) {
   setupNetwork();
   injector
+    ..registerSingleton<SharedPreferences>(prefs)
+    ..registerLazySingleton<LanguageStorage>(
+      () => LanguageStorage(injector()),
+    )
+    ..registerLazySingleton<LanguageRepository>(
+      () => LanguageRepositoryImpl(injector()),
+    )
+    ..registerLazySingleton<GetLanguageUseCase>(
+      () => GetLanguageUseCase(injector()),
+    )
+    ..registerLazySingleton<SetLanguageUseCase>(
+      () => SetLanguageUseCase(injector()),
+    )
+    ..registerLazySingleton<LanguageCubit>(
+      () => LanguageCubit(injector(), injector()),
+    )
     ..registerLazySingleton<ImagePicker>(ImagePicker.new)
     ..registerLazySingleton<VideoMuteDatasource>(VideoMuteDatasource.new)
     ..registerLazySingleton<TempFilesDatasource>(TempFilesDatasource.new)

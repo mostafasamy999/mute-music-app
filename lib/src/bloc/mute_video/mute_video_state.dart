@@ -15,6 +15,18 @@ enum MuteVideoStatus {
   failure,
 }
 
+/// Where the user is in the flow. Decides which actions show by default.
+enum ActionStage {
+  /// Nothing picked yet.
+  empty,
+
+  /// A video is picked, no result yet.
+  picked,
+
+  /// A result exists and can be saved.
+  done,
+}
+
 class MuteVideoState {
   const MuteVideoState({
     this.status = MuteVideoStatus.initial,
@@ -59,6 +71,14 @@ class MuteVideoState {
   }.contains(status);
 
   bool get canSave => muted != null && !isBusy;
+
+  /// From the data only, not the busy status, so the buttons don't change
+  /// while a job runs.
+  ActionStage get stage => muted != null
+      ? ActionStage.done
+      : source != null
+      ? ActionStage.picked
+      : ActionStage.empty;
 
   bool get hasPart =>
       original != null && source != null && source!.path != original!.path;

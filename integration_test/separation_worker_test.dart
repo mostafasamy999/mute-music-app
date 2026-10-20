@@ -11,13 +11,14 @@ import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/data/local/model_storage.dart';
 import 'package:mute_music_app/src/data/local/separation_worker.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Spec 002 T1: the real model runs inside the worker isolate, and the UI
 /// isolate stays free while it does. Downloads the model on first run.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(setupInjector);
+  setUpAll(() async => setupInjector(await SharedPreferences.getInstance()));
 
   testWidgets('the model runs on the worker isolate and the UI stays free', (
     WidgetTester tester,

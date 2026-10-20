@@ -53,6 +53,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorCutFailed": MessageLookupByLibrary.simpleMessage(
       "Could not cut that part of the video.",
     ),
+    "errorLanguageSave": MessageLookupByLibrary.simpleMessage(
+      "Could not save the language. It will reset next time.",
+    ),
     "errorModelDownload": MessageLookupByLibrary.simpleMessage(
       "Could not download the AI model. Check your internet and try again.",
     ),
@@ -81,9 +84,13 @@ class MessageLookup extends MessageLookupByLibrary {
       "Could not save the video.",
     ),
     "errorTooLongChoosePart": m0,
+    "fewerActions": MessageLookupByLibrary.simpleMessage("Fewer actions"),
     "labelMuted": MessageLookupByLibrary.simpleMessage("No sound"),
     "labelNoMusic": MessageLookupByLibrary.simpleMessage("No music"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("Original"),
+    "language": MessageLookupByLibrary.simpleMessage("Language"),
+    "languageSystem": MessageLookupByLibrary.simpleMessage("Phone language"),
+    "moreActions": MessageLookupByLibrary.simpleMessage("More actions"),
     "partEnd": m1,
     "partLabel": m2,
     "partLength": m3,

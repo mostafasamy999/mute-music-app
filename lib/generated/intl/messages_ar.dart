@@ -53,6 +53,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorCutFailed": MessageLookupByLibrary.simpleMessage(
       "تعذر قص هذا الجزء من الفيديو.",
     ),
+    "errorLanguageSave": MessageLookupByLibrary.simpleMessage(
+      "تعذر حفظ اللغة. ستعود للإعداد السابق في المرة القادمة.",
+    ),
     "errorModelDownload": MessageLookupByLibrary.simpleMessage(
       "تعذر تنزيل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وحاول مرة أخرى.",
     ),
@@ -81,9 +84,13 @@ class MessageLookup extends MessageLookupByLibrary {
       "تعذر حفظ الفيديو.",
     ),
     "errorTooLongChoosePart": m0,
+    "fewerActions": MessageLookupByLibrary.simpleMessage("إجراءات أقل"),
     "labelMuted": MessageLookupByLibrary.simpleMessage("بدون صوت"),
     "labelNoMusic": MessageLookupByLibrary.simpleMessage("بدون موسيقى"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("الأصلي"),
+    "language": MessageLookupByLibrary.simpleMessage("اللغة"),
+    "languageSystem": MessageLookupByLibrary.simpleMessage("لغة الهاتف"),
+    "moreActions": MessageLookupByLibrary.simpleMessage("إجراءات أكثر"),
     "partEnd": m1,
     "partLabel": m2,
     "partLength": m3,

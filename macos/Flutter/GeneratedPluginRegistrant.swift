@@ -9,6 +9,7 @@ import file_selector_macos
 import flutter_onnxruntime
 import gal
 import path_provider_foundation
+import shared_preferences_foundation
 import video_player_avfoundation
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
@@ -16,5 +17,6 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterOnnxruntimePlugin.register(with: registry.registrar(forPlugin: "FlutterOnnxruntimePlugin"))
   GalPlugin.register(with: registry.registrar(forPlugin: "GalPlugin"))
   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
+  SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
   FVPVideoPlayerPlugin.register(with: registry.registrar(forPlugin: "FVPVideoPlayerPlugin"))
 }

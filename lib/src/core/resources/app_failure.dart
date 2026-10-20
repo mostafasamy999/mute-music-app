@@ -11,4 +11,5 @@ enum AppFailure {
   musicRemovalFailed,
   cutFailed,
   tooLongForMusic,
+  languageSaveFailed,
 }

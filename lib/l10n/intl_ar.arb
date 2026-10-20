@@ -42,5 +42,10 @@
   "partTooLongForMusic": "إزالة الموسيقى تعمل على أجزاء حتى {limit}. إزالة الصوت تعمل على أي مدة.",
   "cutting": "جاري قص الجزء...",
   "errorCutFailed": "تعذر قص هذا الجزء من الفيديو.",
-  "errorTooLongChoosePart": "هذا الفيديو طويل جدًا لإزالة الموسيقى. اختر جزءًا حتى {limit} أولًا."
+  "errorTooLongChoosePart": "هذا الفيديو طويل جدًا لإزالة الموسيقى. اختر جزءًا حتى {limit} أولًا.",
+  "language": "اللغة",
+  "languageSystem": "لغة الهاتف",
+  "errorLanguageSave": "تعذر حفظ اللغة. ستعود للإعداد السابق في المرة القادمة.",
+  "moreActions": "إجراءات أكثر",
+  "fewerActions": "إجراءات أقل"
 }

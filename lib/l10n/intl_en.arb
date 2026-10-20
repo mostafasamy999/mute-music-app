@@ -104,5 +104,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "language": "Language",
+  "languageSystem": "Phone language",
+  "errorLanguageSave": "Could not save the language. It will reset next time.",
+  "moreActions": "More actions",
+  "fewerActions": "Fewer actions"
 }

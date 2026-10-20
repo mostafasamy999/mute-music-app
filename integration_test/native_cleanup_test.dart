@@ -11,6 +11,7 @@ import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_leftovers_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/pick_video_use_case.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Device checks for temp-file cleanup and native resource release.
 ///
@@ -39,7 +40,7 @@ void main() {
   late Directory cache;
 
   setUpAll(() async {
-    setupInjector();
+    setupInjector(await SharedPreferences.getInstance());
     clip = File(
       '${(await getApplicationSupportDirectory()).path}/test_clip.mp4',
     );

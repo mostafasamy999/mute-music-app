@@ -443,6 +443,51 @@ class S {
       args: [limit],
     );
   }
+
+  /// `Language`
+  String get language {
+    return Intl.message('Language', name: 'language', desc: '', args: []);
+  }
+
+  /// `Phone language`
+  String get languageSystem {
+    return Intl.message(
+      'Phone language',
+      name: 'languageSystem',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not save the language. It will reset next time.`
+  String get errorLanguageSave {
+    return Intl.message(
+      'Could not save the language. It will reset next time.',
+      name: 'errorLanguageSave',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `More actions`
+  String get moreActions {
+    return Intl.message(
+      'More actions',
+      name: 'moreActions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fewer actions`
+  String get fewerActions {
+    return Intl.message(
+      'Fewer actions',
+      name: 'fewerActions',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

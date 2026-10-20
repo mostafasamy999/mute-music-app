@@ -3,6 +3,7 @@ import 'package:mute_music_app/generated/l10n.dart';
 import 'package:mute_music_app/src/config/routes/routes_manager.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
 import 'package:mute_music_app/src/core/constants/app_flags.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/choose_part_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/pick_video_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_music_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_sound_button.dart';
@@ -38,6 +39,8 @@ class MuteVideoContent extends StatelessWidget {
             StatusMessage(),
             SizedBox(height: AppSpacing.md),
             PickVideoButton(),
+            SizedBox(height: AppSpacing.sm),
+            ChoosePartButton(),
             SizedBox(height: AppSpacing.sm),
             RemoveMusicButton(),
             SizedBox(height: AppSpacing.sm),

@@ -5,6 +5,8 @@ import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/core/di/injector.dart';
 import 'package:mute_music_app/src/core/extensions/failure_extensions.dart';
+import 'package:mute_music_app/src/core/resources/app_failure.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/choose_part_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/mute_video_content.dart';
 
 /// Actions only: provider, listener, toasts. No layout, no data.
@@ -28,9 +30,21 @@ class MuteVideoScreen extends StatelessWidget {
         _showToast(context, S.of(context).savedToGallery);
       case MuteVideoStatus.failure:
         final String? text = state.failure?.message(context);
-        if (text != null) _showToast(context, text);
+        if (text == null) return;
+        _showToast(
+          context,
+          text,
+          // Too long for Remove music: offer the way out right there.
+          action: state.failure == AppFailure.tooLongForMusic
+              ? SnackBarAction(
+                  label: S.of(context).choosePart,
+                  onPressed: () => openChoosePart(context),
+                )
+              : null,
+        );
       case MuteVideoStatus.initial:
       case MuteVideoStatus.picking:
+      case MuteVideoStatus.cutting:
       case MuteVideoStatus.muting:
       case MuteVideoStatus.preparingModel:
       case MuteVideoStatus.removingMusic:
@@ -40,9 +54,9 @@ class MuteVideoScreen extends StatelessWidget {
     }
   }
 
-  void _showToast(BuildContext context, String text) {
+  void _showToast(BuildContext context, String text, {SnackBarAction? action}) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
+      ..showSnackBar(SnackBar(content: Text(text), action: action));
   }
 }

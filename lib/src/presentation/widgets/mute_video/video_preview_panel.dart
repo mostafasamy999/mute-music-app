@@ -4,10 +4,12 @@ import 'package:mute_music_app/generated/l10n.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
+import 'package:mute_music_app/src/core/extensions/duration_extensions.dart';
+import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/empty_preview_hint.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/video_preview.dart';
 
-typedef _Data = ({String? path, bool muted, bool musicOnly});
+typedef _Data = ({String? path, bool muted, bool musicOnly, ClipRange? part});
 
 class VideoPreviewPanel extends StatelessWidget {
   const VideoPreviewPanel({super.key});
@@ -19,6 +21,7 @@ class VideoPreviewPanel extends StatelessWidget {
           path: state.muted?.path ?? state.source?.path,
           muted: state.muted != null,
           musicOnly: state.musicOnly,
+          part: state.hasPart ? state.source?.range : null,
         ),
         builder: _builder,
       );
@@ -33,12 +36,18 @@ class VideoPreviewPanel extends StatelessWidget {
           style: Theme.of(context).textTheme.labelLarge,
         ),
         const SizedBox(height: AppSpacing.sm),
-        Expanded(child: Center(child: VideoPreview(path: path))),
+        Expanded(
+          child: Center(child: VideoPreview(path: path)),
+        ),
       ],
     );
   }
 
   String _label(BuildContext context, _Data data) {
+    final ClipRange? part = data.part;
+    if (!data.muted && part != null) {
+      return S.of(context).partLabel(part.start.clock, part.end.clock);
+    }
     if (!data.muted) return S.of(context).labelOriginal;
     return data.musicOnly
         ? S.of(context).labelNoMusic

@@ -49,6 +49,7 @@ class StatusMessage extends StatelessWidget {
 
   String? _text(BuildContext context, _Data data) => switch (data.status) {
     MuteVideoStatus.initial => S.of(context).emptyHint,
+    MuteVideoStatus.cutting => S.of(context).cutting,
     MuteVideoStatus.muting => S.of(context).working,
     MuteVideoStatus.preparingModel => S.of(context).downloadingModel,
     MuteVideoStatus.removingMusic => _percent(context, data.progress),

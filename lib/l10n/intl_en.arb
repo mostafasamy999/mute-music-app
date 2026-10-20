@@ -48,5 +48,61 @@
         "type": "int"
       }
     }
+  },
+  "choosePart": "Choose a part",
+  "choosePartTitle": "Choose a part",
+  "usePart": "Use this part",
+  "partStart": "Start {time}",
+  "@partStart": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "partEnd": "End {time}",
+  "@partEnd": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "partLength": "Length {time}",
+  "@partLength": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "partLabel": "Part {start}–{end}",
+  "@partLabel": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "partTooLongForMusic": "Remove music works on parts up to {limit}. Remove sound works on any length.",
+  "@partTooLongForMusic": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "cutting": "Cutting the part...",
+  "errorCutFailed": "Could not cut that part of the video.",
+  "errorTooLongChoosePart": "This video is too long for Remove music. Choose a part up to {limit} first.",
+  "@errorTooLongChoosePart": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
   }
 }

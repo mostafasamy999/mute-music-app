@@ -343,6 +343,106 @@ class S {
       args: [percent],
     );
   }
+
+  /// `Choose a part`
+  String get choosePart {
+    return Intl.message(
+      'Choose a part',
+      name: 'choosePart',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose a part`
+  String get choosePartTitle {
+    return Intl.message(
+      'Choose a part',
+      name: 'choosePartTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use this part`
+  String get usePart {
+    return Intl.message('Use this part', name: 'usePart', desc: '', args: []);
+  }
+
+  /// `Start {time}`
+  String partStart(String time) {
+    return Intl.message(
+      'Start $time',
+      name: 'partStart',
+      desc: '',
+      args: [time],
+    );
+  }
+
+  /// `End {time}`
+  String partEnd(String time) {
+    return Intl.message('End $time', name: 'partEnd', desc: '', args: [time]);
+  }
+
+  /// `Length {time}`
+  String partLength(String time) {
+    return Intl.message(
+      'Length $time',
+      name: 'partLength',
+      desc: '',
+      args: [time],
+    );
+  }
+
+  /// `Part {start}–{end}`
+  String partLabel(String start, String end) {
+    return Intl.message(
+      'Part $start–$end',
+      name: 'partLabel',
+      desc: '',
+      args: [start, end],
+    );
+  }
+
+  /// `Remove music works on parts up to {limit}. Remove sound works on any length.`
+  String partTooLongForMusic(String limit) {
+    return Intl.message(
+      'Remove music works on parts up to $limit. Remove sound works on any length.',
+      name: 'partTooLongForMusic',
+      desc: '',
+      args: [limit],
+    );
+  }
+
+  /// `Cutting the part...`
+  String get cutting {
+    return Intl.message(
+      'Cutting the part...',
+      name: 'cutting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not cut that part of the video.`
+  String get errorCutFailed {
+    return Intl.message(
+      'Could not cut that part of the video.',
+      name: 'errorCutFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This video is too long for Remove music. Choose a part up to {limit} first.`
+  String errorTooLongChoosePart(String limit) {
+    return Intl.message(
+      'This video is too long for Remove music. Choose a part up to $limit first.',
+      name: 'errorTooLongChoosePart',
+      desc: '',
+      args: [limit],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

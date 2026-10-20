@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:mute_music_app/generated/l10n.dart';
+import 'package:mute_music_app/src/core/constants/clip_limits.dart';
+import 'package:mute_music_app/src/core/extensions/duration_extensions.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 
 extension AppFailureX on AppFailure {
@@ -13,5 +15,8 @@ extension AppFailureX on AppFailure {
     AppFailure.modelMissing => S.of(context).errorModelMissing,
     AppFailure.noAudioTrack => S.of(context).errorNoAudioTrack,
     AppFailure.musicRemovalFailed => S.of(context).errorMusicRemoval,
+    AppFailure.cutFailed => S.of(context).errorCutFailed,
+    AppFailure.tooLongForMusic =>
+      S.of(context).errorTooLongChoosePart(ClipLimits.maxMusicDuration.clock),
   };
 }

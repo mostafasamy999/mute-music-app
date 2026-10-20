@@ -1,9 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
+import 'package:mute_music_app/src/core/constants/clip_limits.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
+import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
+import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
@@ -19,6 +22,7 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     this._ensureModel,
     this._removeMusic,
     this._discardVideo,
+    this._cutVideo,
   ) : super(const MuteVideoState());
 
   final PickVideoUseCase _pickVideo;
@@ -27,8 +31,13 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   final EnsureModelReadyUseCase _ensureModel;
   final RemoveMusicUseCase _removeMusic;
   final DiscardVideoUseCase _discardVideo;
+  final CutVideoUseCase _cutVideo;
 
   Future<void> pickVideo() => _guard(AppFailure.pickFailed, _pick);
+
+  /// Makes [range] of the original the new source (spec 003 F6).
+  Future<void> usePart(ClipRange range) =>
+      _guard(AppFailure.cutFailed, () => _usePart(range));
 
   Future<void> removeSound() => _guard(AppFailure.muteFailed, _mute);
 
@@ -47,10 +56,47 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
         }
         final MuteVideoState previous = state;
         _set(state.withNewSource(data));
-        await _discard(<VideoAsset?>[previous.source, previous.muted], data);
+        await _discard(<VideoAsset?>[
+          previous.source,
+          previous.original,
+          previous.muted,
+        ], data);
       case DataFailed<VideoAsset?>(:final AppFailure failure):
         _fail(failure);
     }
+  }
+
+  Future<void> _usePart(ClipRange range) async {
+    final VideoAsset? original = state.original ?? state.source;
+    if (original == null) return;
+    if (_isWholeVideo(original, range)) {
+      // Nothing to cut. Going back to the whole video drops an earlier part.
+      if (state.hasPart) await _replaceSource(original);
+      return;
+    }
+    _set(state.copyWith(status: MuteVideoStatus.cutting));
+    switch (await _cutVideo(original, range)) {
+      case DataSuccess<VideoAsset>(:final VideoAsset data):
+        await _replaceSource(data);
+      case DataFailed<VideoAsset>(:final AppFailure failure):
+        _fail(failure);
+    }
+  }
+
+  /// Drops the old part and result, but never the original: the user can
+  /// still choose another part of it.
+  Future<void> _replaceSource(VideoAsset next) async {
+    final MuteVideoState previous = state;
+    _set(state.withPart(next));
+    final VideoAsset? oldPart = previous.hasPart ? previous.source : null;
+    await _discard(<VideoAsset?>[oldPart, previous.muted], next);
+  }
+
+  bool _isWholeVideo(VideoAsset original, ClipRange range) {
+    final Duration? duration = original.duration;
+    if (duration == null) return false;
+    return range.start <= ClipLimits.wholeVideoTolerance &&
+        range.end >= duration - ClipLimits.wholeVideoTolerance;
   }
 
   Future<void> _mute() async {
@@ -68,6 +114,12 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   Future<void> _separate() async {
     final VideoAsset? source = state.source;
     if (source == null) return;
+    // The whole track is kept in memory, so a long source would be killed.
+    // Fail before any download or extraction starts (spec 003 F3).
+    final Duration? duration = source.duration;
+    if (duration != null && duration > ClipLimits.maxMusicDuration) {
+      return _fail(AppFailure.tooLongForMusic);
+    }
     if (!await _prepareModel()) return;
     _set(
       state.copyWith(

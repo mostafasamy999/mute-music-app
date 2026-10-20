@@ -34,6 +34,10 @@ import os
                 Self.handleExtractAudio(call: call, result: result)
             case "muxAudio":
                 Self.handleMuxAudio(call: call, result: result)
+            case "cutVideo":
+                Self.handleCutVideo(call: call, result: result)
+            case "videoDuration":
+                Self.handleVideoDuration(call: call, result: result)
             default:
                 result(FlutterMethodNotImplemented)
             }
@@ -136,6 +140,55 @@ import os
             } catch {
                 DispatchQueue.main.async { result(audioError(error, fallback: "mux_failed")) }
             }
+        }
+    }
+
+    private static func handleCutVideo(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let args = call.arguments as? [String: Any],
+              let sourcePath = args["sourcePath"] as? String, !sourcePath.isEmpty,
+              let startMs = (args["startMs"] as? NSNumber)?.intValue,
+              let endMs = (args["endMs"] as? NSNumber)?.intValue else {
+            result(FlutterError(code: "bad_argument", message: "sourcePath, startMs or endMs is missing", details: nil))
+            return
+        }
+        VideoCutter.cut(sourcePath: sourcePath, startMs: startMs, endMs: endMs) { outcome in
+            DispatchQueue.main.async {
+                switch outcome {
+                case .success(let cut):
+                    result(["path": cut.path, "startMs": cut.startMs, "endMs": cut.endMs])
+                case .failure(let error):
+                    result(cutError(error))
+                }
+            }
+        }
+    }
+
+    private static func handleVideoDuration(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let args = call.arguments as? [String: Any],
+              let sourcePath = args["sourcePath"] as? String, !sourcePath.isEmpty else {
+            result(FlutterError(code: "bad_argument", message: "sourcePath is missing", details: nil))
+            return
+        }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let durationMs = VideoCutter.durationMs(path: sourcePath)
+            DispatchQueue.main.async { result(durationMs) }
+        }
+    }
+
+    private static func cutError(_ error: Error) -> FlutterError {
+        switch error {
+        case VideoCutterError.noVideoTrack:
+            return FlutterError(code: "no_video_track", message: "no video track", details: nil)
+        case VideoCutterError.badRange:
+            return FlutterError(code: "bad_range", message: "range outside the video", details: nil)
+        default:
+            return FlutterError(code: "cut_failed", message: error.localizedDescription, details: nil)
         }
     }
 

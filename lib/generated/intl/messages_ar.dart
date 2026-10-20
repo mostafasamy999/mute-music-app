@@ -20,18 +20,38 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'ar';
 
-  static String m0(current, total) => "الجزء ${current} من ${total}";
+  static String m0(limit) =>
+      "هذا الفيديو طويل جدًا لإزالة الموسيقى. اختر جزءًا حتى ${limit} أولًا.";
 
-  static String m1(percent) => "${percent}%";
+  static String m1(time) => "النهاية ${time}";
+
+  static String m2(start, end) => "جزء ${start}–${end}";
+
+  static String m3(time) => "المدة ${time}";
+
+  static String m4(time) => "البداية ${time}";
+
+  static String m5(limit) =>
+      "إزالة الموسيقى تعمل على أجزاء حتى ${limit}. إزالة الصوت تعمل على أي مدة.";
+
+  static String m6(current, total) => "الجزء ${current} من ${total}";
+
+  static String m7(percent) => "${percent}%";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "appTitle": MessageLookupByLibrary.simpleMessage("كتم الفيديو"),
+    "choosePart": MessageLookupByLibrary.simpleMessage("اختر جزءًا"),
+    "choosePartTitle": MessageLookupByLibrary.simpleMessage("اختر جزءًا"),
+    "cutting": MessageLookupByLibrary.simpleMessage("جاري قص الجزء..."),
     "downloadingModel": MessageLookupByLibrary.simpleMessage(
       "جاري التجهيز، لمرة واحدة فقط...",
     ),
     "emptyHint": MessageLookupByLibrary.simpleMessage(
       "اختر فيديو وسأزيل الصوت منه.",
+    ),
+    "errorCutFailed": MessageLookupByLibrary.simpleMessage(
+      "تعذر قص هذا الجزء من الفيديو.",
     ),
     "errorModelDownload": MessageLookupByLibrary.simpleMessage(
       "تعذر تنزيل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وحاول مرة أخرى.",
@@ -60,9 +80,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorSaveFailed": MessageLookupByLibrary.simpleMessage(
       "تعذر حفظ الفيديو.",
     ),
+    "errorTooLongChoosePart": m0,
     "labelMuted": MessageLookupByLibrary.simpleMessage("بدون صوت"),
     "labelNoMusic": MessageLookupByLibrary.simpleMessage("بدون موسيقى"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("الأصلي"),
+    "partEnd": m1,
+    "partLabel": m2,
+    "partLength": m3,
+    "partStart": m4,
+    "partTooLongForMusic": m5,
     "pickAnotherVideo": MessageLookupByLibrary.simpleMessage("اختر فيديو آخر"),
     "pickVideo": MessageLookupByLibrary.simpleMessage("اختر فيديو"),
     "readyToSave": MessageLookupByLibrary.simpleMessage(
@@ -86,9 +112,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "stepModel": MessageLookupByLibrary.simpleMessage(
       "تحميل نموذج الذكاء الاصطناعي",
     ),
-    "stepPart": m0,
-    "stepPercent": m1,
+    "stepPart": m6,
+    "stepPercent": m7,
     "stepSeparate": MessageLookupByLibrary.simpleMessage("فصل الأصوات"),
+    "usePart": MessageLookupByLibrary.simpleMessage("استخدم هذا الجزء"),
     "working": MessageLookupByLibrary.simpleMessage("جاري إزالة الصوت..."),
   };
 }

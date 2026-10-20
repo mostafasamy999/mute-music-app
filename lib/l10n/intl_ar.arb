@@ -31,5 +31,16 @@
   "stepSeparate": "فصل الأصوات",
   "stepBuild": "تجهيز الفيديو",
   "stepPart": "الجزء {current} من {total}",
-  "stepPercent": "{percent}%"
+  "stepPercent": "{percent}%",
+  "choosePart": "اختر جزءًا",
+  "choosePartTitle": "اختر جزءًا",
+  "usePart": "استخدم هذا الجزء",
+  "partStart": "البداية {time}",
+  "partEnd": "النهاية {time}",
+  "partLength": "المدة {time}",
+  "partLabel": "جزء {start}–{end}",
+  "partTooLongForMusic": "إزالة الموسيقى تعمل على أجزاء حتى {limit}. إزالة الصوت تعمل على أي مدة.",
+  "cutting": "جاري قص الجزء...",
+  "errorCutFailed": "تعذر قص هذا الجزء من الفيديو.",
+  "errorTooLongChoosePart": "هذا الفيديو طويل جدًا لإزالة الموسيقى. اختر جزءًا حتى {limit} أولًا."
 }

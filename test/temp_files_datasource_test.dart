@@ -80,4 +80,49 @@ void main() {
     expect(foreign.existsSync(), isTrue);
     expect(fresh.existsSync(), isTrue);
   });
+
+  group('with a second temp folder (iOS tmp/ next to Library/Caches)', () {
+    late Directory nativeTemp;
+    late TempFilesDatasource twoFolders;
+
+    setUp(() {
+      nativeTemp = Directory.systemTemp.createTempSync('native_tmp');
+      twoFolders = TempFilesDatasource(
+        folders: () async => <Directory>[temp, nativeTemp],
+      );
+    });
+
+    tearDown(() => nativeTemp.deleteSync(recursive: true));
+
+    test(
+      'delete removes a part or result the native side wrote there',
+      () async {
+        final File part = touch(nativeTemp, 'part_1.mp4');
+
+        await twoFolders.delete(part.path);
+
+        expect(part.existsSync(), isFalse);
+      },
+    );
+
+    test('delete still never touches a file outside both folders', () async {
+      final File original = touch(outside, 'holiday.mp4');
+
+      await twoFolders.delete(original.path);
+
+      expect(original.existsSync(), isTrue);
+    });
+
+    test('leftovers go from both folders', () async {
+      final DateTime start = DateTime.now();
+      final DateTime old = start.subtract(const Duration(minutes: 5));
+      final File cached = touch(temp, 'muted_1.mp4', modified: old);
+      final File part = touch(nativeTemp, 'part_1.mp4', modified: old);
+
+      await twoFolders.deleteLeftovers(before: start);
+
+      expect(cached.existsSync(), isFalse);
+      expect(part.existsSync(), isFalse);
+    });
+  });
 }

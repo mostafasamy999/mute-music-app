@@ -30,6 +30,8 @@ class MainActivity : FlutterActivity() {
                     "memoryReport" -> result.success(memoryReport())
                     "extractAudio" -> extractAudio(call, result)
                     "muxAudio" -> muxAudio(call, result)
+                    "cutVideo" -> cutVideo(call, result)
+                    "videoDuration" -> videoDuration(call, result)
                     else -> result.notImplemented()
                 }
             }
@@ -98,6 +100,45 @@ class MainActivity : FlutterActivity() {
             } catch (error: Exception) {
                 mainHandler.post { result.error("mux_failed", error.message, null) }
             }
+        }
+    }
+
+    private fun cutVideo(call: MethodCall, result: MethodChannel.Result) {
+        val sourcePath = call.argument<String>("sourcePath")
+        val startMs = call.argument<Number>("startMs")?.toLong()
+        val endMs = call.argument<Number>("endMs")?.toLong()
+        if (sourcePath.isNullOrEmpty() || startMs == null || endMs == null) {
+            result.error("bad_argument", "sourcePath, startMs or endMs is missing", null)
+            return
+        }
+        worker.execute {
+            try {
+                val cut = VideoCutter.cut(sourcePath, startMs, endMs, cacheDir)
+                val payload = mapOf(
+                    "path" to cut.path,
+                    "startMs" to cut.startMs,
+                    "endMs" to cut.endMs,
+                )
+                mainHandler.post { result.success(payload) }
+            } catch (error: NoVideoTrackException) {
+                mainHandler.post { result.error("no_video_track", error.message, null) }
+            } catch (error: BadRangeException) {
+                mainHandler.post { result.error("bad_range", error.message, null) }
+            } catch (error: Exception) {
+                mainHandler.post { result.error("cut_failed", error.message, null) }
+            }
+        }
+    }
+
+    private fun videoDuration(call: MethodCall, result: MethodChannel.Result) {
+        val sourcePath = call.argument<String>("sourcePath")
+        if (sourcePath.isNullOrEmpty()) {
+            result.error("bad_argument", "sourcePath is missing", null)
+            return
+        }
+        worker.execute {
+            val durationMs = VideoCutter.durationMs(sourcePath)
+            mainHandler.post { result.success(durationMs) }
         }
     }
 

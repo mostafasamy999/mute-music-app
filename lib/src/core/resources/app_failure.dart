@@ -9,4 +9,6 @@ enum AppFailure {
   modelMissing,
   noAudioTrack,
   musicRemovalFailed,
+  cutFailed,
+  tooLongForMusic,
 }

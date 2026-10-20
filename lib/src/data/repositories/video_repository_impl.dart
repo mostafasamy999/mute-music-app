@@ -7,6 +7,7 @@ import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/data/local/temp_files_datasource.dart';
 import 'package:mute_music_app/src/data/local/video_mute_datasource.dart';
+import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/repositories/video_repository.dart';
 
@@ -22,7 +23,9 @@ class VideoRepositoryImpl implements VideoRepository {
     try {
       final XFile? file = await _picker.pickVideo(source: ImageSource.gallery);
       if (file == null) return const DataSuccess<VideoAsset?>(null);
-      return DataSuccess<VideoAsset?>(_toAsset(file.path));
+      return DataSuccess<VideoAsset?>(
+        _toAsset(file.path, duration: await _durationOf(file.path)),
+      );
     } on Object {
       return const DataFailed<VideoAsset?>(AppFailure.pickFailed);
     }
@@ -37,6 +40,37 @@ class VideoRepositoryImpl implements VideoRepository {
       return DataFailed<VideoAsset>(_muteFailure(error.code));
     } on Object {
       return const DataFailed<VideoAsset>(AppFailure.muteFailed);
+    }
+  }
+
+  @override
+  Future<DataState<VideoAsset>> cut(
+    VideoAsset original,
+    ClipRange range,
+  ) async {
+    try {
+      final ({String path, int startMs, int endMs}) part = await _datasource
+          .cutVideo(
+            original.path,
+            startMs: range.start.inMilliseconds,
+            endMs: range.end.inMilliseconds,
+          );
+      final ClipRange real = ClipRange(
+        start: Duration(milliseconds: part.startMs),
+        end: Duration(milliseconds: part.endMs),
+      );
+      return DataSuccess<VideoAsset>(
+        _toAsset(part.path, duration: real.length, range: real),
+      );
+    } on PlatformException catch (error) {
+      return DataFailed<VideoAsset>(
+        error.code == 'no_video_track'
+            ? AppFailure.noVideoTrack
+            : AppFailure.cutFailed,
+      );
+    } on Object {
+      // Includes a native range the ClipRange rejects.
+      return const DataFailed<VideoAsset>(AppFailure.cutFailed);
     }
   }
 
@@ -78,11 +112,23 @@ class VideoRepositoryImpl implements VideoRepository {
       ? AppFailure.noVideoTrack
       : AppFailure.muteFailed;
 
-  VideoAsset _toAsset(String path) {
+  /// Best effort: an unknown length only turns off the Remove music limit.
+  Future<Duration?> _durationOf(String path) async {
+    try {
+      final int? ms = await _datasource.durationMs(path);
+      return ms == null || ms <= 0 ? null : Duration(milliseconds: ms);
+    } on Object {
+      return null;
+    }
+  }
+
+  VideoAsset _toAsset(String path, {Duration? duration, ClipRange? range}) {
     final File file = File(path);
     return VideoAsset(
       path: path,
       sizeInBytes: file.existsSync() ? file.lengthSync() : null,
+      duration: duration,
+      range: range,
     );
   }
 }

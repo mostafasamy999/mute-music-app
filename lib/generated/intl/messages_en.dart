@@ -20,18 +20,38 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(current, total) => "Part ${current} of ${total}";
+  static String m0(limit) =>
+      "This video is too long for Remove music. Choose a part up to ${limit} first.";
 
-  static String m1(percent) => "${percent}%";
+  static String m1(time) => "End ${time}";
+
+  static String m2(start, end) => "Part ${start}–${end}";
+
+  static String m3(time) => "Length ${time}";
+
+  static String m4(time) => "Start ${time}";
+
+  static String m5(limit) =>
+      "Remove music works on parts up to ${limit}. Remove sound works on any length.";
+
+  static String m6(current, total) => "Part ${current} of ${total}";
+
+  static String m7(percent) => "${percent}%";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "appTitle": MessageLookupByLibrary.simpleMessage("Mute Video"),
+    "choosePart": MessageLookupByLibrary.simpleMessage("Choose a part"),
+    "choosePartTitle": MessageLookupByLibrary.simpleMessage("Choose a part"),
+    "cutting": MessageLookupByLibrary.simpleMessage("Cutting the part..."),
     "downloadingModel": MessageLookupByLibrary.simpleMessage(
       "Getting ready, one time only...",
     ),
     "emptyHint": MessageLookupByLibrary.simpleMessage(
       "Choose a video and I will remove its sound.",
+    ),
+    "errorCutFailed": MessageLookupByLibrary.simpleMessage(
+      "Could not cut that part of the video.",
     ),
     "errorModelDownload": MessageLookupByLibrary.simpleMessage(
       "Could not download the AI model. Check your internet and try again.",
@@ -60,9 +80,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorSaveFailed": MessageLookupByLibrary.simpleMessage(
       "Could not save the video.",
     ),
+    "errorTooLongChoosePart": m0,
     "labelMuted": MessageLookupByLibrary.simpleMessage("No sound"),
     "labelNoMusic": MessageLookupByLibrary.simpleMessage("No music"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("Original"),
+    "partEnd": m1,
+    "partLabel": m2,
+    "partLength": m3,
+    "partStart": m4,
+    "partTooLongForMusic": m5,
     "pickAnotherVideo": MessageLookupByLibrary.simpleMessage(
       "Pick another video",
     ),
@@ -86,9 +112,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "stepBuild": MessageLookupByLibrary.simpleMessage("Build the video"),
     "stepExtract": MessageLookupByLibrary.simpleMessage("Read the audio"),
     "stepModel": MessageLookupByLibrary.simpleMessage("Get the AI model"),
-    "stepPart": m0,
-    "stepPercent": m1,
+    "stepPart": m6,
+    "stepPercent": m7,
     "stepSeparate": MessageLookupByLibrary.simpleMessage("Separate the voices"),
+    "usePart": MessageLookupByLibrary.simpleMessage("Use this part"),
     "working": MessageLookupByLibrary.simpleMessage("Removing sound..."),
   };
 }

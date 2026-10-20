@@ -7,6 +7,7 @@ import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
+import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
@@ -25,6 +26,8 @@ class _MockEnsureModel extends Mock implements EnsureModelReadyUseCase {}
 class _MockRemoveMusic extends Mock implements RemoveMusicUseCase {}
 
 class _MockDiscard extends Mock implements DiscardVideoUseCase {}
+
+class _MockCut extends Mock implements CutVideoUseCase {}
 
 void main() {
   const VideoAsset source = VideoAsset(path: '/tmp/source.mp4');
@@ -49,8 +52,15 @@ void main() {
     when(() => discard(any())).thenAnswer((_) async {});
   });
 
-  MuteVideoCubit build() =>
-      MuteVideoCubit(pick, mute, save, ensureModel, removeMusic, discard);
+  MuteVideoCubit build() => MuteVideoCubit(
+    pick,
+    mute,
+    save,
+    ensureModel,
+    removeMusic,
+    discard,
+    _MockCut(),
+  );
 
   Matcher failedWith(AppFailure failure) => isA<MuteVideoState>()
       .having((MuteVideoState s) => s.status, 'status', MuteVideoStatus.failure)

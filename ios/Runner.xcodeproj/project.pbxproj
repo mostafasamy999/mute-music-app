@@ -13,6 +13,7 @@
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		8A1B2C3D4E5F60718293A4B6 /* VideoMuter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F60718293A4B5 /* VideoMuter.swift */; };
 		8A1B2C3D4E5F60718293A4C2 /* AudioPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F60718293A4C1 /* AudioPipeline.swift */; };
+		8A1B2C3D4E5F60718293A4D2 /* VideoCutter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F60718293A4D1 /* VideoCutter.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -60,6 +61,7 @@
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		8A1B2C3D4E5F60718293A4B5 /* VideoMuter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoMuter.swift; sourceTree = "<group>"; };
 		8A1B2C3D4E5F60718293A4C1 /* AudioPipeline.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioPipeline.swift; sourceTree = "<group>"; };
+		8A1B2C3D4E5F60718293A4D1 /* VideoCutter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoCutter.swift; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -152,6 +154,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				8A1B2C3D4E5F60718293A4B5 /* VideoMuter.swift */,
 				8A1B2C3D4E5F60718293A4C1 /* AudioPipeline.swift */,
+				8A1B2C3D4E5F60718293A4D1 /* VideoCutter.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -386,6 +389,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				8A1B2C3D4E5F60718293A4B6 /* VideoMuter.swift in Sources */,
 				8A1B2C3D4E5F60718293A4C2 /* AudioPipeline.swift in Sources */,
+				8A1B2C3D4E5F60718293A4D2 /* VideoCutter.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -20,6 +20,7 @@ import 'package:mute_music_app/src/data/repositories/video_repository_impl.dart'
 import 'package:mute_music_app/src/domain/repositories/music_removal_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/separation_model_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/video_repository.dart';
+import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_leftovers_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
@@ -70,6 +71,7 @@ void setupInjector() {
     ..registerLazySingleton<SaveVideoUseCase>(
       () => SaveVideoUseCase(injector()),
     )
+    ..registerLazySingleton<CutVideoUseCase>(() => CutVideoUseCase(injector()))
     ..registerLazySingleton<DiscardVideoUseCase>(
       () => DiscardVideoUseCase(injector()),
     )
@@ -78,6 +80,7 @@ void setupInjector() {
     )
     ..registerFactory<MuteVideoCubit>(
       () => MuteVideoCubit(
+        injector(),
         injector(),
         injector(),
         injector(),

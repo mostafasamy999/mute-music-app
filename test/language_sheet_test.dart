@@ -26,11 +26,11 @@ void main() {
   ) async {
     await tester.pumpWidget(const MuteMusicApp());
     await tester.pumpAndSettle();
-    expect(find.text('Pick a video'), findsOneWidget);
+    expect(find.text('Add an image, a sound or a video'), findsOneWidget);
 
     await pickLanguage(tester, 'العربية');
 
-    expect(find.text('Pick a video'), findsNothing);
+    expect(find.text('Add an image, a sound or a video'), findsNothing);
     final BuildContext context = tester.element(find.byType(Scaffold).first);
     expect(Directionality.of(context), TextDirection.rtl);
     expect(injector<SharedPreferences>().getString(LanguageStorage.key), 'ar');
@@ -60,7 +60,7 @@ void main() {
     await pickLanguage(tester, 'لغة الهاتف');
 
     // The test device is English.
-    expect(find.text('Pick a video'), findsOneWidget);
+    expect(find.text('Add an image, a sound or a video'), findsOneWidget);
     expect(
       injector<SharedPreferences>().containsKey(LanguageStorage.key),
       isFalse,

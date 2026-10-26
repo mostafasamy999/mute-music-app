@@ -15,17 +15,19 @@ enum MuteVideoStatus {
   failure,
 }
 
-/// Where the user is in the flow. Decides which actions show by default.
-enum ActionStage {
-  /// Nothing picked yet.
-  empty,
-
-  /// A video is picked, no result yet.
-  picked,
-
-  /// A result exists and can be saved.
-  done,
+/// What the user can do next with the current file (spec 006 §3, §3.1).
+enum MediaAction {
+  removeSound,
+  removeMusic,
+  convertToAudio,
+  extractText,
+  saveToGallery,
+  saveToMusic,
 }
+
+/// An operation already run on the current file since it was added or cut.
+/// Rule A1: an operation is never offered again once it ran.
+enum MediaOperation { removeSound, removeMusic }
 
 class MuteVideoState {
   const MuteVideoState({
@@ -70,15 +72,48 @@ class MuteVideoState {
     MuteVideoStatus.saving,
   }.contains(status);
 
-  bool get canSave => muted != null && !isBusy;
+  /// The file the actions apply to and Save saves: the latest result, else
+  /// the part or the added file.
+  VideoAsset? get current => muted ?? source;
 
-  /// From the data only, not the busy status, so the buttons don't change
-  /// while a job runs.
-  ActionStage get stage => muted != null
-      ? ActionStage.done
-      : source != null
-      ? ActionStage.picked
-      : ActionStage.empty;
+  /// A part or a result exists. The untouched added file is never saved.
+  bool get isChanged => muted != null || hasPart;
+
+  bool get canSave => isChanged && !isBusy;
+
+  /// Every action on a result is offered on that result, and a new cut starts
+  /// again from the added file, so the result is the only operation so far.
+  Set<MediaOperation> get applied => muted == null
+      ? const <MediaOperation>{}
+      : <MediaOperation>{
+          musicOnly ? MediaOperation.removeMusic : MediaOperation.removeSound,
+        };
+
+  /// The actions under the file, in order (spec 006 §3 and §3.1). From the
+  /// data only, not the busy status, so the buttons don't jump during a job.
+  List<MediaAction> get actions {
+    final VideoAsset? file = current;
+    if (file == null) return const <MediaAction>[];
+    final Set<MediaOperation> done = applied;
+    return switch (file.kind) {
+      MediaKind.image => const <MediaAction>[MediaAction.extractText],
+      MediaKind.audio => <MediaAction>[
+        if (!done.contains(MediaOperation.removeMusic)) MediaAction.removeMusic,
+        MediaAction.extractText,
+        if (isChanged) MediaAction.saveToMusic,
+      ],
+      // No sound is left, so nothing but Save can work on it.
+      MediaKind.video when done.contains(MediaOperation.removeSound) =>
+        const <MediaAction>[MediaAction.saveToGallery],
+      MediaKind.video => <MediaAction>[
+        if (done.isEmpty) MediaAction.removeSound,
+        if (!done.contains(MediaOperation.removeMusic)) MediaAction.removeMusic,
+        MediaAction.convertToAudio,
+        MediaAction.extractText,
+        if (isChanged) MediaAction.saveToGallery,
+      ],
+    };
+  }
 
   bool get hasPart =>
       original != null && source != null && source!.path != original!.path;

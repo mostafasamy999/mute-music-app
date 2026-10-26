@@ -8,19 +8,27 @@ import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/presentation/screens/choose_part_screen.dart';
 
-class ChoosePartButton extends StatelessWidget {
-  const ChoosePartButton({super.key});
+typedef _Data = ({bool shown, bool enabled});
+
+/// The cut icon over the file (spec 006 W5). It always cuts the added file,
+/// whichever file is shown. Videos only for now; sound gets it in plan S8.
+class CutFileButton extends StatelessWidget {
+  const CutFileButton({super.key});
 
   @override
   Widget build(BuildContext context) =>
-      BlocSelector<MuteVideoCubit, MuteVideoState, bool>(
-        selector: (MuteVideoState state) =>
-            state.source != null && !state.isBusy,
-        builder: (BuildContext context, bool enabled) => OutlinedButton.icon(
-          onPressed: enabled ? () => openChoosePart(context) : null,
-          icon: const Icon(Icons.content_cut),
-          label: Text(S.of(context).choosePart),
+      BlocSelector<MuteVideoCubit, MuteVideoState, _Data>(
+        selector: (MuteVideoState state) => (
+          shown: (state.original ?? state.source)?.isVideo ?? false,
+          enabled: !state.isBusy,
         ),
+        builder: (BuildContext context, _Data data) => data.shown
+            ? IconButton.filledTonal(
+                tooltip: S.of(context).choosePart,
+                onPressed: data.enabled ? () => openChoosePart(context) : null,
+                icon: const Icon(Icons.content_cut),
+              )
+            : const SizedBox.shrink(),
       );
 }
 

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
+import 'package:mute_music_app/src/data/local/audio_file_datasource.dart';
 import 'package:mute_music_app/src/data/local/temp_files_datasource.dart';
 import 'package:mute_music_app/src/data/local/video_mute_datasource.dart';
 import 'package:mute_music_app/src/data/repositories/video_repository_impl.dart';
@@ -18,19 +19,23 @@ class _MockDatasource extends Mock implements VideoMuteDatasource {}
 
 class _MockTempFiles extends Mock implements TempFilesDatasource {}
 
+class _MockAudioFiles extends Mock implements AudioFileDatasource {}
+
 void main() {
   const VideoAsset source = VideoAsset(path: '/tmp/source.mp4');
 
   late _MockPicker picker;
   late _MockDatasource datasource;
   late _MockTempFiles tempFiles;
+  late _MockAudioFiles audioFiles;
   late VideoRepositoryImpl repository;
 
   setUp(() {
     picker = _MockPicker();
     datasource = _MockDatasource();
     tempFiles = _MockTempFiles();
-    repository = VideoRepositoryImpl(picker, datasource, tempFiles);
+    audioFiles = _MockAudioFiles();
+    repository = VideoRepositoryImpl(picker, datasource, tempFiles, audioFiles);
   });
 
   test(
@@ -40,7 +45,9 @@ void main() {
         () => picker.pickVideo(source: ImageSource.gallery),
       ).thenThrow(MissingPluginException());
 
-      final DataState<VideoAsset?> result = await repository.pickFromGallery();
+      final DataState<VideoAsset?> result = await repository.pick(
+        MediaKind.video,
+      );
 
       expect(
         (result as DataFailed<VideoAsset?>).failure,
@@ -145,7 +152,7 @@ void main() {
       ).thenAnswer((_) async => 90500);
 
       final VideoAsset picked =
-          (await repository.pickFromGallery() as DataSuccess<VideoAsset?>)
+          (await repository.pick(MediaKind.video) as DataSuccess<VideoAsset?>)
               .data!;
       expect(picked.duration, const Duration(milliseconds: 90500));
 
@@ -153,9 +160,58 @@ void main() {
         () => datasource.durationMs(source.path),
       ).thenThrow(MissingPluginException());
       final VideoAsset unknown =
-          (await repository.pickFromGallery() as DataSuccess<VideoAsset?>)
+          (await repository.pick(MediaKind.video) as DataSuccess<VideoAsset?>)
               .data!;
       expect(unknown.duration, isNull);
     },
   );
+
+  test('an image pick uses the photo picker and has no length', () async {
+    when(
+      () => picker.pickImage(source: ImageSource.gallery),
+    ).thenAnswer((_) async => XFile('/tmp/photo.jpg'));
+
+    final MediaAsset? picked =
+        (await repository.pick(MediaKind.image) as DataSuccess<MediaAsset?>)
+            .data;
+
+    expect(picked?.kind, MediaKind.image);
+    expect(picked?.duration, isNull);
+    verifyNever(() => datasource.durationMs(any()));
+  });
+
+  test('a sound pick uses the file picker and reads the length', () async {
+    when(() => audioFiles.pick()).thenAnswer((_) async => '/tmp/song.mp3');
+    when(
+      () => datasource.durationMs('/tmp/song.mp3'),
+    ).thenAnswer((_) async => 180000);
+
+    final MediaAsset? picked =
+        (await repository.pick(MediaKind.audio) as DataSuccess<MediaAsset?>)
+            .data;
+
+    expect(picked?.kind, MediaKind.audio);
+    expect(picked?.duration, const Duration(minutes: 3));
+    verifyNever(() => picker.pickVideo(source: ImageSource.gallery));
+  });
+
+  test('a closed sound picker is a success with no file', () async {
+    when(() => audioFiles.pick()).thenAnswer((_) async => null);
+
+    final DataState<MediaAsset?> result = await repository.pick(
+      MediaKind.audio,
+    );
+
+    expect((result as DataSuccess<MediaAsset?>).data, isNull);
+  });
+
+  test('a sound picker that throws fails cleanly', () async {
+    when(() => audioFiles.pick()).thenThrow(MissingPluginException());
+
+    final DataState<MediaAsset?> result = await repository.pick(
+      MediaKind.audio,
+    );
+
+    expect((result as DataFailed<MediaAsset?>).failure, AppFailure.pickFailed);
+  });
 }

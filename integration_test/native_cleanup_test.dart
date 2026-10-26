@@ -9,7 +9,7 @@ import 'package:mute_music_app/src/core/di/injector.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_leftovers_use_case.dart';
-import 'package:mute_music_app/src/domain/use_cases/pick_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,12 +25,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 const MethodChannel _channel = MethodChannel('com.mostafasamy.mutemusic/video');
 
 /// Hands out whatever the test queues, instead of opening the system picker.
-class _QueuedPick implements PickVideoUseCase {
+class _QueuedPick implements PickMediaUseCase {
   final List<VideoAsset> queue = <VideoAsset>[];
 
   @override
-  Future<DataState<VideoAsset?>> call() async =>
-      DataSuccess<VideoAsset?>(queue.removeAt(0));
+  Future<DataState<VideoAsset?>> call([
+    MediaKind kind = MediaKind.video,
+  ]) async => DataSuccess<VideoAsset?>(queue.removeAt(0));
 }
 
 void main() {

@@ -3,8 +3,9 @@ import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 
 abstract interface class VideoRepository {
-  /// Success with `null` means the user closed the picker without choosing.
-  Future<DataState<VideoAsset?>> pickFromGallery();
+  /// Picks one file of [kind] (spec 006 F1). Success with `null` means the
+  /// user closed the picker without choosing.
+  Future<DataState<MediaAsset?>> pick(MediaKind kind);
 
   Future<DataState<VideoAsset>> removeSound(VideoAsset source);
 

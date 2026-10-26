@@ -1,31 +1,8 @@
-import 'package:mute_music_app/src/domain/entities/clip_range.dart';
+import 'package:mute_music_app/src/domain/entities/media_asset.dart';
 
-/// A video file on disk. Pure Dart — no Flutter imports.
-class VideoAsset {
-  const VideoAsset({
-    required this.path,
-    this.sizeInBytes,
-    this.duration,
-    this.range,
-  });
+export 'package:mute_music_app/src/domain/entities/media_asset.dart';
 
-  final String path;
-  final int? sizeInBytes;
-
-  /// Null when the platform could not read it.
-  final Duration? duration;
-
-  /// Set only on a part: the range of the original it really covers.
-  final ClipRange? range;
-
-  @override
-  bool operator ==(Object other) =>
-      other is VideoAsset &&
-      other.path == path &&
-      other.sizeInBytes == sizeInBytes &&
-      other.duration == duration &&
-      other.range == range;
-
-  @override
-  int get hashCode => Object.hash(path, sizeInBytes, duration, range);
-}
+/// The name every pre-006 file uses. It is the same class as [MediaAsset], so
+/// those files (including the Remove music pipeline) keep compiling and
+/// behaving exactly as before. A `VideoAsset(...)` is a video by default.
+typedef VideoAsset = MediaAsset;

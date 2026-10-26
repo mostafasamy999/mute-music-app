@@ -1,14 +1,11 @@
 {
   "@@locale": "en",
   "appTitle": "Mute Video",
-  "pickVideo": "Pick a video",
-  "pickAnotherVideo": "Pick another video",
   "removeSound": "Remove sound",
   "saveToGallery": "Save to gallery",
   "working": "Removing sound...",
   "saving": "Saving...",
   "savedToGallery": "Saved to your gallery",
-  "emptyHint": "Choose a video and I will remove its sound.",
   "readyToSave": "Sound removed. You can save it now.",
   "labelOriginal": "Original",
   "labelMuted": "No sound",
@@ -108,6 +105,12 @@
   "language": "Language",
   "languageSystem": "Phone language",
   "errorLanguageSave": "Could not save the language. It will reset next time.",
-  "moreActions": "More actions",
-  "fewerActions": "Fewer actions"
+  "previewUnavailable": "This file can't be played. It may have been moved or deleted.",
+  "addFileHint": "Add an image, a sound or a video",
+  "addFileTitle": "Add a file",
+  "addImage": "Image",
+  "addSound": "Sound",
+  "addVideo": "Video",
+  "clearFile": "Clear this file",
+  "labelImage": "Image"
 }

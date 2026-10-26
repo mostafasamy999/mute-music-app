@@ -11,11 +11,11 @@ import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
-import 'package:mute_music_app/src/domain/use_cases/pick_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
 
-class _MockPick extends Mock implements PickVideoUseCase {}
+class _MockPick extends Mock implements PickMediaUseCase {}
 
 class _MockMute extends Mock implements MuteVideoUseCase {}
 
@@ -56,6 +56,7 @@ void main() {
   late _MockRemoveMusic removeMusic;
   late _MockDiscard discard;
   late _MockCut cut;
+  late _MockSave save;
 
   setUpAll(() {
     registerFallbackValue(original);
@@ -69,18 +70,12 @@ void main() {
     removeMusic = _MockRemoveMusic();
     discard = _MockDiscard();
     cut = _MockCut();
+    save = _MockSave();
     when(() => discard(any())).thenAnswer((_) async {});
   });
 
-  MuteVideoCubit build() => MuteVideoCubit(
-    pick,
-    mute,
-    _MockSave(),
-    ensureModel,
-    removeMusic,
-    discard,
-    cut,
-  );
+  MuteVideoCubit build() =>
+      MuteVideoCubit(pick, mute, save, ensureModel, removeMusic, discard, cut);
 
   const MuteVideoState picked = MuteVideoState(
     source: original,
@@ -391,5 +386,31 @@ void main() {
       () => cut(original, asked),
       () => discard(const VideoAsset(path: '/tmp/part_0.mp4')),
     ]),
+  );
+
+  // Spec 006 S7 / Q12: after only a cut, Save saves the part.
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'save after only a cut saves the part',
+    setUp: () => when(
+      () => save(part),
+    ).thenAnswer((_) async => const DataSuccess<void>(null)),
+    build: build,
+    seed: () => MuteVideoState(source: part, original: original),
+    act: (MuteVideoCubit cubit) => cubit.saveToGallery(),
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.status, MuteVideoStatus.saved);
+      verify(() => save(part)).called(1);
+      verifyNever(() => save(original));
+    },
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'save on the untouched added file does nothing',
+    build: build,
+    seed: () => picked,
+    act: (MuteVideoCubit cubit) => cubit.saveToGallery(),
+    expect: () => <MuteVideoState>[],
+    verify: (_) => verifyNever(() => save(any())),
   );
 }

@@ -40,15 +40,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "addFileHint": MessageLookupByLibrary.simpleMessage(
+      "أضف صورة أو صوتًا أو فيديو",
+    ),
+    "addFileTitle": MessageLookupByLibrary.simpleMessage("أضف ملفًا"),
+    "addImage": MessageLookupByLibrary.simpleMessage("صورة"),
+    "addSound": MessageLookupByLibrary.simpleMessage("صوت"),
+    "addVideo": MessageLookupByLibrary.simpleMessage("فيديو"),
     "appTitle": MessageLookupByLibrary.simpleMessage("كتم الفيديو"),
     "choosePart": MessageLookupByLibrary.simpleMessage("اختر جزءًا"),
     "choosePartTitle": MessageLookupByLibrary.simpleMessage("اختر جزءًا"),
+    "clearFile": MessageLookupByLibrary.simpleMessage("إزالة هذا الملف"),
     "cutting": MessageLookupByLibrary.simpleMessage("جاري قص الجزء..."),
     "downloadingModel": MessageLookupByLibrary.simpleMessage(
       "جاري التجهيز، لمرة واحدة فقط...",
-    ),
-    "emptyHint": MessageLookupByLibrary.simpleMessage(
-      "اختر فيديو وسأزيل الصوت منه.",
     ),
     "errorCutFailed": MessageLookupByLibrary.simpleMessage(
       "تعذر قص هذا الجزء من الفيديو.",
@@ -84,20 +89,20 @@ class MessageLookup extends MessageLookupByLibrary {
       "تعذر حفظ الفيديو.",
     ),
     "errorTooLongChoosePart": m0,
-    "fewerActions": MessageLookupByLibrary.simpleMessage("إجراءات أقل"),
+    "labelImage": MessageLookupByLibrary.simpleMessage("صورة"),
     "labelMuted": MessageLookupByLibrary.simpleMessage("بدون صوت"),
     "labelNoMusic": MessageLookupByLibrary.simpleMessage("بدون موسيقى"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("الأصلي"),
     "language": MessageLookupByLibrary.simpleMessage("اللغة"),
     "languageSystem": MessageLookupByLibrary.simpleMessage("لغة الهاتف"),
-    "moreActions": MessageLookupByLibrary.simpleMessage("إجراءات أكثر"),
     "partEnd": m1,
     "partLabel": m2,
     "partLength": m3,
     "partStart": m4,
     "partTooLongForMusic": m5,
-    "pickAnotherVideo": MessageLookupByLibrary.simpleMessage("اختر فيديو آخر"),
-    "pickVideo": MessageLookupByLibrary.simpleMessage("اختر فيديو"),
+    "previewUnavailable": MessageLookupByLibrary.simpleMessage(
+      "لا يمكن تشغيل هذا الملف. ربما نُقل أو حُذف.",
+    ),
     "readyToSave": MessageLookupByLibrary.simpleMessage(
       "تمت إزالة الصوت. يمكنك حفظه الآن.",
     ),

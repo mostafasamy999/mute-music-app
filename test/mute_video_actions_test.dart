@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,168 +6,275 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mute_music_app/generated/l10n.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
+import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/cut_file_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/mute_video_actions.dart';
 
 class _MockCubit extends MockCubit<MuteVideoState> implements MuteVideoCubit {}
 
-const VideoAsset _source = VideoAsset(path: '/tmp/source.mp4');
+const VideoAsset _video = VideoAsset(path: '/tmp/video.mp4');
+final VideoAsset _part = VideoAsset(
+  path: '/tmp/part_1.mp4',
+  range: ClipRange(start: Duration.zero, end: const Duration(seconds: 3)),
+);
 const VideoAsset _result = VideoAsset(path: '/tmp/result.mp4');
-
-const MuteVideoState _empty = MuteVideoState();
-const MuteVideoState _picked = MuteVideoState(source: _source);
-const MuteVideoState _done = MuteVideoState(
-  status: MuteVideoStatus.muted,
-  source: _source,
-  muted: _result,
-  musicOnly: true,
+const MediaAsset _image = MediaAsset(path: '/tmp/i.jpg', kind: MediaKind.image);
+const MediaAsset _sound = MediaAsset(path: '/tmp/s.mp3', kind: MediaKind.audio);
+final MediaAsset _soundPart = MediaAsset(
+  path: '/tmp/part_2.m4a',
+  kind: MediaKind.audio,
+  range: ClipRange(start: Duration.zero, end: const Duration(seconds: 3)),
+);
+const MediaAsset _soundResult = MediaAsset(
+  path: '/tmp/nomusic_2.m4a',
+  kind: MediaKind.audio,
 );
 
+/// Spec 006 S7: the actions per file type and after edits (§3, §3.1).
 void main() {
-  group('stage', () {
-    test('comes from the data: empty, picked, done', () {
-      expect(_empty.stage, ActionStage.empty);
-      expect(_picked.stage, ActionStage.picked);
-      expect(_done.stage, ActionStage.done);
+  group('actions table', () {
+    test('nothing added: no actions', () {
+      expect(const MuteVideoState().actions, isEmpty);
     });
 
-    test('a running job keeps its stage', () {
-      const MuteVideoState removing = MuteVideoState(
-        status: MuteVideoStatus.removingMusic,
-        source: _source,
+    test('image: Extract text only', () {
+      expect(
+        const MuteVideoState(source: _image, original: _image).actions,
+        <MediaAction>[MediaAction.extractText],
       );
-      expect(removing.stage, ActionStage.picked);
+    });
+
+    test('sound: Remove music only and Extract text, no save yet', () {
+      expect(
+        const MuteVideoState(source: _sound, original: _sound).actions,
+        <MediaAction>[MediaAction.removeMusic, MediaAction.extractText],
+      );
+    });
+
+    test('video: the four actions, no save yet', () {
+      expect(
+        const MuteVideoState(source: _video, original: _video).actions,
+        <MediaAction>[
+          MediaAction.removeSound,
+          MediaAction.removeMusic,
+          MediaAction.convertToAudio,
+          MediaAction.extractText,
+        ],
+      );
+    });
+
+    test('video part (only a cut): the four actions plus Save (Q12)', () {
+      expect(
+        MuteVideoState(source: _part, original: _video).actions,
+        <MediaAction>[
+          MediaAction.removeSound,
+          MediaAction.removeMusic,
+          MediaAction.convertToAudio,
+          MediaAction.extractText,
+          MediaAction.saveToGallery,
+        ],
+      );
+    });
+
+    test('video with music removed: no Remove sound or music again (A1)', () {
+      expect(
+        MuteVideoState(
+          source: _part,
+          original: _video,
+          muted: _result,
+          musicOnly: true,
+        ).actions,
+        <MediaAction>[
+          MediaAction.convertToAudio,
+          MediaAction.extractText,
+          MediaAction.saveToGallery,
+        ],
+      );
+    });
+
+    test('video with sound removed: Save to gallery only', () {
+      expect(
+        const MuteVideoState(
+          source: _video,
+          original: _video,
+          muted: _result,
+        ).actions,
+        <MediaAction>[MediaAction.saveToGallery],
+      );
+    });
+
+    test('sound part: Remove music, Extract text, Save to Music', () {
+      expect(
+        MuteVideoState(source: _soundPart, original: _sound).actions,
+        <MediaAction>[
+          MediaAction.removeMusic,
+          MediaAction.extractText,
+          MediaAction.saveToMusic,
+        ],
+      );
+    });
+
+    test('sound with music removed: Extract text and Save to Music', () {
+      expect(
+        const MuteVideoState(
+          source: _sound,
+          original: _sound,
+          muted: _soundResult,
+          musicOnly: true,
+        ).actions,
+        <MediaAction>[MediaAction.extractText, MediaAction.saveToMusic],
+      );
+    });
+
+    test('a running job keeps the same actions (no jumping buttons)', () {
+      const MuteVideoState idle = MuteVideoState(
+        source: _video,
+        original: _video,
+      );
+      const MuteVideoState running = MuteVideoState(
+        status: MuteVideoStatus.removingMusic,
+        source: _video,
+        original: _video,
+      );
+      expect(running.actions, idle.actions);
+    });
+
+    test('Save works on a part, never on the untouched file', () {
+      expect(
+        const MuteVideoState(source: _video, original: _video).canSave,
+        isFalse,
+      );
+      expect(MuteVideoState(source: _part, original: _video).canSave, isTrue);
+      expect(MuteVideoState(source: _part, original: _video).current, _part);
+      expect(
+        MuteVideoState(source: _part, original: _video, muted: _result).current,
+        _result,
+      );
     });
   });
 
-  late _MockCubit cubit;
-  late StreamController<MuteVideoState> states;
+  group('widget', () {
+    late _MockCubit cubit;
 
-  setUp(() {
-    cubit = _MockCubit();
-    states = StreamController<MuteVideoState>();
-  });
+    setUp(() => cubit = _MockCubit());
 
-  // Not awaited: closing a stream nobody listened to never completes.
-  tearDown(() => unawaited(states.close()));
-
-  Future<void> pump(WidgetTester tester, MuteVideoState initial) async {
-    whenListen(cubit, states.stream, initialState: initial);
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: const <LocalizationsDelegate<Object>>[
-          S.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: S.delegate.supportedLocales,
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: BlocProvider<MuteVideoCubit>.value(
+    Future<void> pump(WidgetTester tester, MuteVideoState state) async {
+      whenListen(
+        cubit,
+        const Stream<MuteVideoState>.empty(),
+        initialState: state,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: S.delegate.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<MuteVideoCubit>.value(
               value: cubit,
-              child: const MuteVideoActions(),
+              child: const Column(
+                children: <Widget>[CutFileButton(), MuteVideoActions()],
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-  }
+      );
+    }
 
-  /// Every button label on screen, top to bottom.
-  List<String> labels(WidgetTester tester) => tester
-      .widgetList<Text>(
-        find.descendant(
-          of: find.byWidgetPredicate((Widget w) => w is ButtonStyleButton),
-          matching: find.byType(Text),
+    testWidgets('a video shows only the built actions, in order', (
+      WidgetTester tester,
+    ) async {
+      await pump(
+        tester,
+        const MuteVideoState(source: _video, original: _video),
+      );
+
+      expect(find.text('Remove sound'), findsOneWidget);
+      expect(find.text('Remove music only'), findsOneWidget);
+      expect(find.text('Save to gallery'), findsNothing);
+      expect(
+        tester.getTopLeft(find.text('Remove sound')).dy,
+        lessThan(tester.getTopLeft(find.text('Remove music only')).dy),
+      );
+    });
+
+    testWidgets('after Remove sound only Save to gallery shows', (
+      WidgetTester tester,
+    ) async {
+      await pump(
+        tester,
+        const MuteVideoState(
+          status: MuteVideoStatus.muted,
+          source: _video,
+          original: _video,
+          muted: _result,
         ),
-      )
-      .map((Text text) => text.data!)
-      .toList();
+      );
 
-  testWidgets('empty shows only Pick a video', (WidgetTester tester) async {
-    await pump(tester, _empty);
+      expect(find.text('Save to gallery'), findsOneWidget);
+      expect(find.text('Remove sound'), findsNothing);
+      expect(find.text('Remove music only'), findsNothing);
+    });
 
-    expect(labels(tester), <String>['Pick a video', 'More actions']);
-  });
+    testWidgets('an image shows no built action yet (Extract text is S12)', (
+      WidgetTester tester,
+    ) async {
+      await pump(
+        tester,
+        const MuteVideoState(source: _image, original: _image),
+      );
 
-  testWidgets('picked shows Pick another and Remove music only', (
-    WidgetTester tester,
-  ) async {
-    await pump(tester, _picked);
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.byType(CutFileButton), findsOneWidget);
+      expect(find.byTooltip('Choose a part'), findsNothing);
+    });
 
-    expect(labels(tester), <String>[
-      'Pick another video',
-      'Remove music only',
-      'More actions',
-    ]);
-  });
+    testWidgets('a sound hides Remove music only until S13', (
+      WidgetTester tester,
+    ) async {
+      await pump(
+        tester,
+        const MuteVideoState(source: _sound, original: _sound),
+      );
 
-  testWidgets('done shows Pick another and Save', (WidgetTester tester) async {
-    await pump(tester, _done);
+      expect(find.text('Remove music only'), findsNothing);
+    });
 
-    expect(labels(tester), <String>[
-      'Pick another video',
-      'Save to gallery',
-      'More actions',
-    ]);
-  });
+    testWidgets('a video has the cut icon; it is off during a job', (
+      WidgetTester tester,
+    ) async {
+      await pump(
+        tester,
+        const MuteVideoState(
+          status: MuteVideoStatus.muting,
+          source: _video,
+          original: _video,
+        ),
+      );
 
-  testWidgets('More actions shows all five in order, Fewer hides them', (
-    WidgetTester tester,
-  ) async {
-    await pump(tester, _picked);
+      final IconButton cut = tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.content_cut),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(cut.onPressed, isNull);
+    });
 
-    await tester.tap(find.text('More actions'));
-    await tester.pumpAndSettle();
-    expect(labels(tester), <String>[
-      'Pick another video',
-      'Choose a part',
-      'Remove music only',
-      'Remove sound',
-      'Save to gallery',
-      'Fewer actions',
-    ]);
+    testWidgets('there is no More actions toggle (005 removed)', (
+      WidgetTester tester,
+    ) async {
+      await pump(
+        tester,
+        const MuteVideoState(source: _video, original: _video),
+      );
 
-    await tester.tap(find.text('Fewer actions'));
-    await tester.pumpAndSettle();
-    expect(labels(tester), <String>[
-      'Pick another video',
-      'Remove music only',
-      'More actions',
-    ]);
-  });
-
-  testWidgets('a new stage folds the extra actions away', (
-    WidgetTester tester,
-  ) async {
-    await pump(tester, _picked);
-    await tester.tap(find.text('More actions'));
-    await tester.pumpAndSettle();
-
-    states.add(_done);
-    await tester.pumpAndSettle();
-
-    expect(labels(tester), <String>[
-      'Pick another video',
-      'Save to gallery',
-      'More actions',
-    ]);
-  });
-
-  testWidgets('the same stage keeps them open (e.g. after a job ends)', (
-    WidgetTester tester,
-  ) async {
-    await pump(tester, _picked);
-    await tester.tap(find.text('More actions'));
-    await tester.pumpAndSettle();
-
-    states.add(
-      const MuteVideoState(status: MuteVideoStatus.cutting, source: _source),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Fewer actions'), findsOneWidget);
+      expect(find.textContaining('actions'), findsNothing);
+    });
   });
 }

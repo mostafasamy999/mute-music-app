@@ -6,7 +6,7 @@ import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/core/di/injector.dart';
 import 'package:mute_music_app/src/core/extensions/failure_extensions.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
-import 'package:mute_music_app/src/presentation/widgets/mute_video/choose_part_button.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/cut_file_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/mute_video_content.dart';
 
 /// Actions only: provider, listener, toasts. No layout, no data.

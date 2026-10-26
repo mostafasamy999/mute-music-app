@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mute_music_app/main.dart';
 import 'package:mute_music_app/src/core/di/injector.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/mute_video_content.dart';
-import 'package:mute_music_app/src/presentation/widgets/mute_video/pick_video_button.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/add_media_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -16,6 +16,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(MuteVideoContent), findsOneWidget);
-    expect(find.byType(PickVideoButton), findsOneWidget);
+    // Spec 006 §2.1: the empty screen shows only the add widget.
+    expect(find.byType(AddMediaButton), findsOneWidget);
   });
 }

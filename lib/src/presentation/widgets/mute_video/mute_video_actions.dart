@@ -1,78 +1,58 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
-import 'package:mute_music_app/src/presentation/widgets/mute_video/choose_part_button.dart';
-import 'package:mute_music_app/src/presentation/widgets/mute_video/more_actions_toggle.dart';
-import 'package:mute_music_app/src/presentation/widgets/mute_video/pick_video_button.dart';
+import 'package:mute_music_app/src/domain/entities/media_asset.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_music_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_sound_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/save_video_button.dart';
 
-enum _Action { pick, choosePart, removeMusic, removeSound, save }
-
-/// Only the next sensible actions, plus a toggle for the rest. Each button
-/// still owns its own enabled rules.
-class MuteVideoActions extends StatefulWidget {
+/// Only the actions that make sense for the current file (spec 006 §3, §3.1).
+/// The state decides which ones; each button still owns its enabled rules.
+class MuteVideoActions extends StatelessWidget {
   const MuteVideoActions({super.key});
 
-  @override
-  State<MuteVideoActions> createState() => _MuteVideoActionsState();
-}
-
-class _MuteVideoActionsState extends State<MuteVideoActions> {
-  bool _expanded = false;
-
-  /// The default set per stage. Expanded shows every action, in this order.
-  static const Map<ActionStage, List<_Action>> _defaults =
-      <ActionStage, List<_Action>>{
-        ActionStage.empty: <_Action>[_Action.pick],
-        ActionStage.picked: <_Action>[_Action.pick, _Action.removeMusic],
-        ActionStage.done: <_Action>[_Action.pick, _Action.save],
-      };
+  /// Actions whose feature isn't built yet stay hidden until their plan step
+  /// lands: Convert to audio (S10), Save to Music (S11), Extract text (S12),
+  /// and Remove music on a sound file (S13).
+  static const Set<MediaAction> built = <MediaAction>{
+    MediaAction.removeSound,
+    MediaAction.removeMusic,
+    MediaAction.saveToGallery,
+  };
 
   @override
   Widget build(BuildContext context) =>
-      BlocConsumer<MuteVideoCubit, MuteVideoState>(
-        // A new stage means a new obvious next step: fold the rest away.
-        listenWhen: (MuteVideoState previous, MuteVideoState current) =>
-            previous.stage != current.stage,
-        listener: (_, _) => setState(() => _expanded = false),
+      BlocBuilder<MuteVideoCubit, MuteVideoState>(
         buildWhen: (MuteVideoState previous, MuteVideoState current) =>
-            previous.stage != current.stage,
-        builder: (BuildContext context, MuteVideoState state) =>
-            _buildActions(state.stage),
+            !listEquals(previous.actions, current.actions),
+        builder: (BuildContext context, MuteVideoState state) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            for (final MediaAction action in state.actions)
+              if (_isBuilt(action, state.current?.kind)) ...<Widget>[
+                _button(action),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+          ],
+        ),
       );
 
-  Widget _buildActions(ActionStage stage) {
-    final List<_Action> shown = _expanded
-        ? _Action.values
-        : _defaults[stage]!;
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 200),
-      alignment: AlignmentDirectional.topCenter,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          for (final _Action action in shown) ...<Widget>[
-            _button(action),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-          MoreActionsToggle(
-            expanded: _expanded,
-            onPressed: () => setState(() => _expanded = !_expanded),
-          ),
-        ],
-      ),
-    );
-  }
+  /// Remove music only on a sound file needs its own audio-only ends (S13);
+  /// the video pipeline can't mux without a video track.
+  static bool _isBuilt(MediaAction action, MediaKind? kind) =>
+      built.contains(action) &&
+      !(action == MediaAction.removeMusic && kind == MediaKind.audio);
 
-  Widget _button(_Action action) => switch (action) {
-    _Action.pick => const PickVideoButton(),
-    _Action.choosePart => const ChoosePartButton(),
-    _Action.removeMusic => const RemoveMusicButton(),
-    _Action.removeSound => const RemoveSoundButton(),
-    _Action.save => const SaveVideoButton(),
+  Widget _button(MediaAction action) => switch (action) {
+    MediaAction.removeSound => const RemoveSoundButton(),
+    MediaAction.removeMusic => const RemoveMusicButton(),
+    MediaAction.saveToGallery => const SaveVideoButton(),
+    // Hidden by [built] until their steps land.
+    MediaAction.convertToAudio ||
+    MediaAction.extractText ||
+    MediaAction.saveToMusic => const SizedBox.shrink(),
   };
 }

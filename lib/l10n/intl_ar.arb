@@ -1,14 +1,11 @@
 {
   "@@locale": "ar",
   "appTitle": "كتم الفيديو",
-  "pickVideo": "اختر فيديو",
-  "pickAnotherVideo": "اختر فيديو آخر",
   "removeSound": "إزالة الصوت",
   "saveToGallery": "حفظ في المعرض",
   "working": "جاري إزالة الصوت...",
   "saving": "جاري الحفظ...",
   "savedToGallery": "تم الحفظ في المعرض",
-  "emptyHint": "اختر فيديو وسأزيل الصوت منه.",
   "readyToSave": "تمت إزالة الصوت. يمكنك حفظه الآن.",
   "labelOriginal": "الأصلي",
   "labelMuted": "بدون صوت",
@@ -46,6 +43,12 @@
   "language": "اللغة",
   "languageSystem": "لغة الهاتف",
   "errorLanguageSave": "تعذر حفظ اللغة. ستعود للإعداد السابق في المرة القادمة.",
-  "moreActions": "إجراءات أكثر",
-  "fewerActions": "إجراءات أقل"
+  "previewUnavailable": "لا يمكن تشغيل هذا الملف. ربما نُقل أو حُذف.",
+  "addFileHint": "أضف صورة أو صوتًا أو فيديو",
+  "addFileTitle": "أضف ملفًا",
+  "addImage": "صورة",
+  "addSound": "صوت",
+  "addVideo": "فيديو",
+  "clearFile": "إزالة هذا الملف",
+  "labelImage": "صورة"
 }

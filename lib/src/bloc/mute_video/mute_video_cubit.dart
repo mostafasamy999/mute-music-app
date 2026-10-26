@@ -10,13 +10,13 @@ import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
-import 'package:mute_music_app/src/domain/use_cases/pick_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
 
 class MuteVideoCubit extends Cubit<MuteVideoState> {
   MuteVideoCubit(
-    this._pickVideo,
+    this._pickMedia,
     this._muteVideo,
     this._saveVideo,
     this._ensureModel,
@@ -25,7 +25,7 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     this._cutVideo,
   ) : super(const MuteVideoState());
 
-  final PickVideoUseCase _pickVideo;
+  final PickMediaUseCase _pickMedia;
   final MuteVideoUseCase _muteVideo;
   final SaveVideoUseCase _saveVideo;
   final EnsureModelReadyUseCase _ensureModel;
@@ -33,7 +33,33 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   final DiscardVideoUseCase _discardVideo;
   final CutVideoUseCase _cutVideo;
 
-  Future<void> pickVideo() => _guard(AppFailure.pickFailed, _pick);
+  /// Adds an image, a sound or a video (spec 006 F1). It replaces the current
+  /// file, its part and its outputs.
+  Future<void> addMedia(MediaKind kind) =>
+      _guard(AppFailure.pickFailed, () => _pick(kind));
+
+  Future<void> pickVideo() => addMedia(MediaKind.video);
+
+  /// Drops the file, its part and every output, deletes the app's copies, and
+  /// goes back to the empty screen (spec 006 F2). Does nothing while a job
+  /// runs, so a job never finishes on a file that is gone.
+  Future<void> clear() async {
+    if (state.isBusy) return;
+    final MuteVideoState previous = state;
+    _set(const MuteVideoState());
+    // Without a part the source and the original are the same file.
+    final Map<String, VideoAsset> files = <String, VideoAsset>{
+      for (final VideoAsset file in <VideoAsset?>[
+        previous.source,
+        previous.original,
+        previous.muted,
+      ].nonNulls)
+        file.path: file,
+    };
+    for (final VideoAsset file in files.values) {
+      await _discardVideo(file);
+    }
+  }
 
   /// Makes [range] of the original the new source (spec 003 F6).
   Future<void> usePart(ClipRange range) =>
@@ -46,9 +72,9 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
 
   Future<void> saveToGallery() => _guard(AppFailure.saveFailed, _save);
 
-  Future<void> _pick() async {
+  Future<void> _pick(MediaKind kind) async {
     _set(state.copyWith(status: MuteVideoStatus.picking));
-    switch (await _pickVideo()) {
+    switch (await _pickMedia(kind)) {
       case DataSuccess<VideoAsset?>(:final VideoAsset? data):
         if (data == null) {
           _set(state.copyWith(status: _idleStatus));
@@ -136,11 +162,12 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     }
   }
 
+  /// Saves the result, or the part when only a cut was made (spec 006 Q12).
   Future<void> _save() async {
-    final VideoAsset? muted = state.muted;
-    if (muted == null) return;
+    final VideoAsset? file = state.current;
+    if (file == null || !state.isChanged) return;
     _set(state.copyWith(status: MuteVideoStatus.saving));
-    switch (await _saveVideo(muted)) {
+    switch (await _saveVideo(file)) {
       case DataSuccess<void>():
         _set(state.copyWith(status: MuteVideoStatus.saved));
       case DataFailed<void>(:final AppFailure failure):

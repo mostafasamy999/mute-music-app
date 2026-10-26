@@ -40,15 +40,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "addFileHint": MessageLookupByLibrary.simpleMessage(
+      "Add an image, a sound or a video",
+    ),
+    "addFileTitle": MessageLookupByLibrary.simpleMessage("Add a file"),
+    "addImage": MessageLookupByLibrary.simpleMessage("Image"),
+    "addSound": MessageLookupByLibrary.simpleMessage("Sound"),
+    "addVideo": MessageLookupByLibrary.simpleMessage("Video"),
     "appTitle": MessageLookupByLibrary.simpleMessage("Mute Video"),
     "choosePart": MessageLookupByLibrary.simpleMessage("Choose a part"),
     "choosePartTitle": MessageLookupByLibrary.simpleMessage("Choose a part"),
+    "clearFile": MessageLookupByLibrary.simpleMessage("Clear this file"),
     "cutting": MessageLookupByLibrary.simpleMessage("Cutting the part..."),
     "downloadingModel": MessageLookupByLibrary.simpleMessage(
       "Getting ready, one time only...",
-    ),
-    "emptyHint": MessageLookupByLibrary.simpleMessage(
-      "Choose a video and I will remove its sound.",
     ),
     "errorCutFailed": MessageLookupByLibrary.simpleMessage(
       "Could not cut that part of the video.",
@@ -84,22 +89,20 @@ class MessageLookup extends MessageLookupByLibrary {
       "Could not save the video.",
     ),
     "errorTooLongChoosePart": m0,
-    "fewerActions": MessageLookupByLibrary.simpleMessage("Fewer actions"),
+    "labelImage": MessageLookupByLibrary.simpleMessage("Image"),
     "labelMuted": MessageLookupByLibrary.simpleMessage("No sound"),
     "labelNoMusic": MessageLookupByLibrary.simpleMessage("No music"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("Original"),
     "language": MessageLookupByLibrary.simpleMessage("Language"),
     "languageSystem": MessageLookupByLibrary.simpleMessage("Phone language"),
-    "moreActions": MessageLookupByLibrary.simpleMessage("More actions"),
     "partEnd": m1,
     "partLabel": m2,
     "partLength": m3,
     "partStart": m4,
     "partTooLongForMusic": m5,
-    "pickAnotherVideo": MessageLookupByLibrary.simpleMessage(
-      "Pick another video",
+    "previewUnavailable": MessageLookupByLibrary.simpleMessage(
+      "This file can\'t be played. It may have been moved or deleted.",
     ),
-    "pickVideo": MessageLookupByLibrary.simpleMessage("Pick a video"),
     "readyToSave": MessageLookupByLibrary.simpleMessage(
       "Sound removed. You can save it now.",
     ),

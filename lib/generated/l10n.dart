@@ -59,21 +59,6 @@ class S {
     return Intl.message('Mute Video', name: 'appTitle', desc: '', args: []);
   }
 
-  /// `Pick a video`
-  String get pickVideo {
-    return Intl.message('Pick a video', name: 'pickVideo', desc: '', args: []);
-  }
-
-  /// `Pick another video`
-  String get pickAnotherVideo {
-    return Intl.message(
-      'Pick another video',
-      name: 'pickAnotherVideo',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Remove sound`
   String get removeSound {
     return Intl.message(
@@ -114,16 +99,6 @@ class S {
     return Intl.message(
       'Saved to your gallery',
       name: 'savedToGallery',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Choose a video and I will remove its sound.`
-  String get emptyHint {
-    return Intl.message(
-      'Choose a video and I will remove its sound.',
-      name: 'emptyHint',
       desc: '',
       args: [],
     );
@@ -469,24 +444,59 @@ class S {
     );
   }
 
-  /// `More actions`
-  String get moreActions {
+  /// `This file can't be played. It may have been moved or deleted.`
+  String get previewUnavailable {
     return Intl.message(
-      'More actions',
-      name: 'moreActions',
+      'This file can\'t be played. It may have been moved or deleted.',
+      name: 'previewUnavailable',
       desc: '',
       args: [],
     );
   }
 
-  /// `Fewer actions`
-  String get fewerActions {
+  /// `Add an image, a sound or a video`
+  String get addFileHint {
     return Intl.message(
-      'Fewer actions',
-      name: 'fewerActions',
+      'Add an image, a sound or a video',
+      name: 'addFileHint',
       desc: '',
       args: [],
     );
+  }
+
+  /// `Add a file`
+  String get addFileTitle {
+    return Intl.message('Add a file', name: 'addFileTitle', desc: '', args: []);
+  }
+
+  /// `Image`
+  String get addImage {
+    return Intl.message('Image', name: 'addImage', desc: '', args: []);
+  }
+
+  /// `Sound`
+  String get addSound {
+    return Intl.message('Sound', name: 'addSound', desc: '', args: []);
+  }
+
+  /// `Video`
+  String get addVideo {
+    return Intl.message('Video', name: 'addVideo', desc: '', args: []);
+  }
+
+  /// `Clear this file`
+  String get clearFile {
+    return Intl.message(
+      'Clear this file',
+      name: 'clearFile',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Image`
+  String get labelImage {
+    return Intl.message('Image', name: 'labelImage', desc: '', args: []);
   }
 }
 

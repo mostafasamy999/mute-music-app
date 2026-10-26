@@ -29,11 +29,11 @@ Status: `[x]` Completed · `[ ]` Pending, In Progress or Blocked (the note says 
 
 - [x] **S1** Codebase inspection and baseline
 - [x] **S2** Lock the original/source/output invariants with tests (spec §6)
-- [ ] **S3** Previews handle missing or broken files (W11)
-- [ ] **S4** `MediaAsset` with a kind: image, audio, video (§6). *Needs approval: touches state and repositories*
-- [ ] **S5** Empty screen with the add widget, add sheet, Clear (x) (W1–W3)
-- [ ] **S6** Image and audio previews (§2.2)
-- [ ] **S7** Actions per file type and after edits (W4). *Replaces the 005 layout*
+- [x] **S3** Previews handle missing or broken files (W11)
+- [x] **S4** `MediaAsset` with a kind: image, audio, video (§6). *Approved: typedef approach*
+- [x] **S5** Empty screen with the add widget, add sheet, Clear (x) (W1–W3)
+- [x] **S6** Image and audio previews (§2.2)
+- [x] **S7** Actions per file type and after edits (W4). *Replaced the 005 layout*
 - [ ] **S8** Cut icon (video, then sound); original label and Full video (W5). *Sound cut needs a new native method*
 - [ ] **S9** View original screen (W6)
 - [ ] **S10** Convert to audio: M4A, native (F7, W7)
@@ -110,154 +110,186 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 ## S3 Previews handle missing or broken files
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26)  
 **Goal:** no endless spinner (W11); needed before the original screen and new previews.  
 **Dependencies:** S1  
-**Files likely to change:** `widgets/mute_video/video_preview.dart`, ARB (`previewUnavailable`), new `test/video_preview_test.dart`
+**Files likely to change:** `widgets/mute_video/video_preview.dart`, ARB (`previewUnavailable`), new `test/video_preview_test.dart`  
+**Files changed:** `lib/src/presentation/widgets/mute_video/video_preview.dart`, `lib/l10n/intl_{en,ar}.arb`, `lib/generated/**` (regenerated), `pubspec.yaml` + `pubspec.lock` (dev dependency `video_player_platform_interface`, already in the lock as transitive), new `test/video_preview_test.dart`
 
 **Tasks**
-- [ ] Catch a failed `initialize()` and dispose the controller
-- [ ] Show `previewUnavailable` (EN + AR) with an icon in that state
-- [ ] Ignore a late load that finishes after a newer path was asked for
+- [x] Catch a failed `initialize()` and dispose the controller *(dispose is not awaited there: if creating the player itself failed, `VideoPlayerController.dispose` waits forever)*
+- [x] Show `previewUnavailable` (EN + AR) with an icon in that state
+- [x] Ignore a late load that finishes after a newer path was asked for *(it disposes its own player)*
 
 **Acceptance**
-- [ ] A bad path shows the message, with no uncaught exception
-- [ ] A good path after it plays
+- [x] A bad path shows the message, with no uncaught exception
+- [x] A good path after it plays
 
 **Tests**
-- [ ] New widget test (fake `VideoPlayerPlatform` or an injected controller factory)
-- [ ] Full suite
+- [x] New widget test with a fake `VideoPlayerPlatform`: 4 tests (missing file, good after missing, late slow load, Arabic message)
+- [x] Full suite: 102 pass (98 → 102)
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff
 
-**Risks:** `video_player` in widget tests needs a fake platform.
+**Notes:** only the first load is covered. An error during playback (after the file opened) still shows the player as is. `dart format` also joined one existing line in `_player` (format only). Not checked on a device yet (S15).
+
+**Risks:** `video_player` in widget tests needs a fake platform. Done with `VideoPlayerPlatform.instance = fake`.
 
 ---
 
 ## S4 `MediaAsset` with a kind
 
-**Status:** Pending. **Ask for approval** before starting, with the exact file list.  
+**Status:** Completed (2026-10-26). Approved by the user with the typedef approach.  
 **Goal:** one asset type for image, audio and video, without changing behavior.  
 **Dependencies:** S2  
-**Files likely to change:** `domain/entities/video_asset.dart` (→ `media_asset.dart` + `MediaKind`), state, cubit, use cases, `VideoRepository`, tests. **Not** the VIP files: `MusicRemovalRepository` keeps taking a video asset (an adapter or a typedef keeps its signature).
+**Files changed:** new `lib/src/domain/entities/media_asset.dart`, `lib/src/domain/entities/video_asset.dart` (now a typedef that re-exports `media_asset.dart`), new `test/media_asset_test.dart`
 
 **Tasks**
-- [ ] Get approval with the exact file list
-- [ ] Add `MediaKind { image, audio, video }`
-- [ ] Add `kind` to the asset (video by default)
-- [ ] Keep `VideoAsset` as a typedef or thin alias, so the VIP files compile unchanged
+- [x] Get approval with the exact file list *(approved 2026-10-26: only `video_asset.dart`, new `media_asset.dart` and tests)*
+- [x] Add `MediaKind { image, audio, video }` *(plus `isImage`, `isAudio`, `isVideo`)*
+- [x] Add `kind` to the asset (video by default) *(part of `==` and `hashCode`)*
+- [x] Keep `VideoAsset` as a typedef, so the VIP files compile unchanged
 
 **Acceptance**
-- [ ] Zero behavior change
-- [ ] `git diff --stat` shows no VIP files
+- [x] Zero behavior change *(every existing test passes unchanged)*
+- [x] `git diff --stat` shows no VIP files *(no diff under `lib/src/data`, `bloc`, `core`, `android`, `ios`, `integration_test`)*
 
 **Tests**
-- [ ] All existing tests green (98+)
+- [x] All existing tests green, plus 4 new `media_asset_test` tests: 106 pass (102 → 106)
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff
 
-**Risks:** a wide rename.
+**Notes:** code that should be generic (state, cubit, pick) still says `VideoAsset`; S5 and later move it to `MediaAsset` as each one is touched anyway.
 
 ---
 
 ## S5 Empty screen, add sheet, Clear (x)
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26)  
 **Goal:** W1–W3.  
 **Dependencies:** S4  
-**Files likely to change:** `screens/mute_video_screen.dart`, `widgets/mute_video/empty_preview_hint.dart` (→ add widget), new `add_media_sheet.dart`, new `clear_button.dart`, cubit (`addMedia(kind)`, `clear()`), new `PickMediaUseCase`, `VideoRepositoryImpl` (pick by kind), `pubspec.yaml` (`file_picker` for sound), Android/iOS permissions for audio, ARB, tests
+**Files changed:**
+- New: `data/local/audio_file_datasource.dart`, `widgets/mute_video/add_media_button.dart`, `add_media_sheet.dart`, `clear_file_button.dart`, `test/add_media_test.dart`
+- Renamed: `use_cases/pick_video_use_case.dart` → `pick_media_use_case.dart` (`PickMediaUseCase.call([MediaKind kind = video])`)
+- Changed: `domain/repositories/video_repository.dart` (`pickFromGallery()` → `pick(MediaKind)`), `data/repositories/video_repository_impl.dart`, `bloc/mute_video/mute_video_cubit.dart` (`addMedia`, `clear`), `core/di/injector.dart`, `widgets/mute_video/mute_video_content.dart`, `video_preview_panel.dart`, ARB + generated l10n, `pubspec.yaml`/`.lock` (`file_picker` 11.0.3), `macos/Flutter/GeneratedPluginRegistrant.swift` (generated)
+- Deleted: `widgets/mute_video/empty_preview_hint.dart` (replaced by the add widget)
+- Tests updated for the new API/screen: `video_repository_impl_test.dart`, `widget_test.dart`, `language_sheet_test.dart`, `integration_test/native_cleanup_test.dart` (`_QueuedPick.call` signature)
 
 **Tasks**
-- [ ] Add widget centered under the app bar (only widget on the empty screen)
-- [ ] Sheet with Image / Sound / Video, each opening the right picker
-- [ ] Copy the picked file into temp
-- [ ] `clear()` drops all refs and deletes the temp copies
-- [ ] x disabled while busy
+- [x] Add widget centered under the app bar (only widget on the empty screen)
+- [x] Sheet with Image / Sound / Video, each opening the right picker *(image/video: `image_picker`; sound: `file_picker` with a fixed extension list, so iOS opens Files, not the Apple Music library)*
+- [x] Copy the picked file into temp *(both pickers already hand back a copy in the temp folder: Android `cacheDir`, iOS `tmp/`; no extra copy needed)*
+- [x] `clear()` drops all refs and deletes the temp copies *(each file once; never the user's own file)*
+- [x] x disabled while busy *(and `clear()` itself does nothing while busy)*
 
 **Acceptance**
-- [ ] Spec AC1
-- [ ] Spec AC8 (for a video)
-- [ ] Remove music on a video still works end to end (VIP)
+- [x] Spec AC1 *(widget tests: empty screen, sheet, cancel)*
+- [x] Spec AC8 (for a video) *(cubit tests: clear deletes part, original and result)*
+- [x] Remove music on a video still works end to end (VIP) *(no diff in the VIP files; all Remove music tests pass. Not re-run on a device: S15)*
 
 **Tests**
-- [ ] Cubit tests: add per kind, cancel, clear
-- [ ] Widget tests: the empty layout and x
+- [x] Cubit tests: add per kind, replace, cancel, clear, clear while busy (7)
+- [x] Widget tests: the empty layout, sheet, closing the sheet, x, x while busy (5)
+- [x] Repository tests: image pick, sound pick, closed sound picker, sound picker error (4)
+- [x] Full suite: 122 pass (106 → 122)
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff *(a repo-wide `dart format` had touched 3 VIP files and 3 others; reverted, and only own files are formatted from now on)*
 
-**Risks:** new picker package and permissions (`READ_MEDIA_AUDIO` on Android 13+). The image_picker copy of a video must still land in temp.
+**Notes:**
+- The status line still says "Choose a video and I will remove its sound." for any picked file, and the old action buttons (Pick another video, etc.) still show until S7.
+- An image or a sound file shows the "can't be played" preview until S6.
+- No `READ_MEDIA_AUDIO` permission needed: the document picker grants access to the chosen file.
+
+**Risks:** new picker package. `flutter build apk --debug` succeeds with `file_picker` (2026-10-26). iOS build not checked yet (S15).
 
 ---
 
 ## S6 Image and audio previews
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26)  
 **Goal:** preview per kind (§2.2).  
 **Dependencies:** S3, S5  
-**Files likely to change:** new `image_preview.dart`, new `audio_preview.dart` (play/pause, seek, time), `video_preview_panel.dart` (switch by kind), `pubspec.yaml` (an audio player, e.g. `just_audio`, or `video_player` for audio files), tests
+**Files changed:**
+- New: `widgets/mute_video/player_host.dart` (the S3 load/fail/late-load logic, shared), `audio_preview.dart`, `image_preview.dart`, `preview_unavailable.dart`, `test/media_previews_test.dart`, `test/helpers/fake_video_player.dart` (moved out of `video_preview_test.dart`)
+- Changed: `video_preview.dart` (now a thin `PlayerHost` user), `video_preview_panel.dart` (switch by kind, *Image* label), ARB + generated l10n (`labelImage`), `test/video_preview_test.dart` (uses the shared fake)
 
 **Tasks**
-- [ ] Image preview
-- [ ] Audio preview with play/pause, seek bar and time
-- [ ] Panel switches the preview by kind
-- [ ] Labels per spec §2.3
+- [x] Image preview *(`Image.file`, fitted; broken file → `PreviewUnavailable`)*
+- [x] Audio preview with play/pause, seek bar and time *(uses `video_player`, which plays sound files too: no new package)*
+- [x] Panel switches the preview by kind
+- [x] Labels per spec §2.3 *(Image for images; Original / Part / No sound / No music as before)*
 
 **Acceptance**
-- [ ] Each kind previews
-- [ ] A bad file shows `previewUnavailable`
+- [x] Each kind previews
+- [x] A bad file shows `previewUnavailable` *(image and audio; video from S3)*
 
 **Tests**
-- [ ] Widget tests per kind
-- [ ] Full suite
+- [x] Widget tests per kind: 9 in `media_previews_test.dart` (audio time, play, seek, missing, LTR time in Arabic; image file and missing; panel per kind)
+- [x] Full suite: 131 pass (122 → 131); the 4 S3 tests still pass after the move into `PlayerHost`
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff
 
-**Risks:** a second player package; check it works next to `video_player` on iOS.
+**Notes:** a widget test can't decode a real image file (it hangs), so the image test checks the file and fit, and the missing-file test covers the error path. Audio playback not checked on a device yet (S15).
+
+**Risks:** a second player package. Avoided: `video_player` plays audio files on Android (ExoPlayer) and iOS (AVPlayer).
 
 ---
 
 ## S7 Actions per file type and after edits
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26)  
 **Goal:** W4: exactly the tables in spec §3 and §3.1.  
 **Dependencies:** S5, S6  
-**Files likely to change:** `widgets/mute_video/mute_video_actions.dart` (rewritten), `more_actions_toggle.dart` (removed), state (`availableActions` derived from kind + output), tests (`mute_video_actions_test.dart` rewritten for the new tables)
+**Files changed:**
+- `bloc/mute_video/mute_video_state.dart`: `ActionStage`/`stage` (005) replaced by `MediaAction`, `MediaOperation`, `current`, `isChanged`, `applied`, `actions`; `canSave` now true for a part too
+- `bloc/mute_video/mute_video_cubit.dart`: Save saves `current` (the result, or the part after only a cut)
+- `widgets/mute_video/mute_video_actions.dart` rewritten (no toggle; buttons from `state.actions`)
+- New `widgets/mute_video/cut_file_button.dart` (cut icon over videos + `openChoosePart`, moved from the deleted `choose_part_button.dart`); `mute_video_content.dart` places it; `screens/mute_video_screen.dart` import
+- `widgets/mute_video/status_message.dart`: no line for a freshly added file
+- Deleted: `more_actions_toggle.dart`, `pick_video_button.dart`, `choose_part_button.dart`; strings `pickVideo`, `pickAnotherVideo`, `moreActions`, `fewerActions`, `emptyHint` (ARB + generated)
+- Tests: `mute_video_actions_test.dart` rewritten, `choose_part_cubit_test.dart` (+2), new `too_long_snackbar_test.dart`
 
 **Tasks**
-- [ ] Keep the list of operations applied since the last cut (`applied`)
-- [ ] Derive the action list in state from the file kind + `applied` (pure, tested)
-- [ ] Rule A1: an operation is never offered twice
-- [ ] After Remove sound: only Save to gallery
-- [ ] Delete `more_actions_toggle.dart` and its strings (005 removed, Q17)
-- [ ] Hide actions not built yet (Convert to audio, Extract text, Save to Music) behind a flag until their step lands
+- [x] Keep the list of operations applied since the last cut (`applied`) *(derived from the result for now: every operation on offer so far makes the first result, and a cut drops results. S10 turns it into a stored list when Convert to audio chains on a result)*
+- [x] Derive the action list in state from the file kind + `applied` (pure, tested)
+- [x] Rule A1: an operation is never offered twice
+- [x] After Remove sound: only Save to gallery
+- [x] Delete `more_actions_toggle.dart` and its strings (005 removed, Q17)
+- [x] Hide actions not built yet (Convert to audio, Extract text, Save to Music) behind a flag until their step lands *(`MuteVideoActions.built`)*
 
 **Acceptance**
-- [ ] State tests for every row of spec §3/§3.1
-- [ ] AC5: video → cut → Remove music case
-- [ ] The "too long" snackbar still opens the cut screen
+- [x] State tests for every row of spec §3/§3.1 *(empty, image, sound, video, video part, music removed, sound removed, sound part, sound with music removed)*
+- [x] AC5: video → cut → Remove music case
+- [x] The "too long" snackbar still opens the cut screen *(widget test: the snackbar shows the Choose a part action)*
 
 **Tests**
-- [ ] State tests for the action tables
-- [ ] Rewritten `mute_video_actions_test.dart`
+- [x] State tests for the action tables (11)
+- [x] Rewritten `mute_video_actions_test.dart` widgets (6): order, after Remove sound, image, sound hides Remove music until S13, cut icon off during a job, no toggle
+- [x] Cubit: Save after only a cut saves the part; Save on the untouched file does nothing (2)
+- [x] Full suite: 143 pass (131 → 143); `flutter build apk --debug` OK
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff
 
-**Risks:** keep the action table in one place so later answers change one spot.
+**Notes:**
+- The Pick another video button is gone, as in the spec: x, then add.
+- The cut entry moved from a button to the **cut icon over videos** now, not in S8, so cutting never disappears between steps. S8 still adds it for sound, plus the Original label and Full video.
+- An image or a sound currently shows no action button: Extract text lands in S12, and Remove music only on a sound file in S13 (the video pipeline can't mux without a video track), so both are hidden until then.
+- Not checked on a device yet (S15).
 
 ---
 
@@ -269,7 +301,7 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 **Files likely to change:** `video_preview_panel.dart` (cut icon over the file), `choose_part_button.dart` (entry moves), `screens/choose_part_screen.dart` (Original label, Full video button), ARB, `test/choose_part_widgets_test.dart`; for sound, new native `cutAudio`
 
 **Tasks**
-- [ ] Cut icon over every video and sound (input or output)
+- [ ] Cut icon over every video and sound (input or output) *(videos done early in S7; sound left)*
 - [ ] The cut screen says it shows the Original
 - [ ] Full video button resets both handles
 - [ ] Sound: new native `cutAudio` (Android `MediaExtractor`+`MediaMuxer` copy, iOS passthrough export to `.m4a`). New methods only
@@ -509,6 +541,11 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 | Date | Step | Result | Files |
 |---|---|---|---|
+| 2026-10-26 | S7 | Completed. Action tables in state (A1, Q12), new actions widget, cut icon over videos, 005 removed; 143 tests, analyze clean, VIP untouched | see S7 |
+| 2026-10-26 | S6 | Completed. Image and audio previews, shared `PlayerHost`; 9 tests; 131 tests, analyze clean, VIP untouched | `player_host.dart`, `audio_preview.dart`, `image_preview.dart`, `preview_unavailable.dart`, panel, tests |
+| 2026-10-26 | S5 | Completed. Add widget, sheet (image/sound/video), Clear (x); `file_picker`; 16 tests; 122 tests, analyze clean, Android build OK, VIP untouched | see S5 |
+| 2026-10-26 | S4 | Completed. `MediaAsset` + `MediaKind`; `VideoAsset` is a typedef; 4 tests; 106 tests, analyze clean, VIP files untouched | `media_asset.dart`, `video_asset.dart`, `test/media_asset_test.dart` |
+| 2026-10-26 | S3 | Completed. Preview shows `previewUnavailable` for a missing/broken file; late loads ignored; 4 widget tests; 102 tests, analyze clean, VIP files untouched | `video_preview.dart`, ARB, generated l10n, `pubspec.yaml`/`.lock`, `test/video_preview_test.dart` |
 | 2026-10-26 | — | Plan reformatted with checkboxes | this file |
 | 2026-10-26 | S2 | Completed. 4 invariant tests, all pass; 98 tests, analyze clean, VIP files untouched | `test/choose_part_cubit_test.dart` |
 | 2026-10-26 | — | Spec v2.4: Q12 resolved (after only a cut: all four actions + Save) | `spec.md` |

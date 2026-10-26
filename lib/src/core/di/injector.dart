@@ -9,6 +9,7 @@ import 'package:mute_music_app/src/core/di/network_module.dart';
 import 'package:mute_music_app/src/core/diagnostics/memory_logger.dart';
 import 'package:mute_music_app/src/core/diagnostics/memory_probe.dart';
 import 'package:mute_music_app/src/data/local/device_memory_datasource.dart';
+import 'package:mute_music_app/src/data/local/audio_file_datasource.dart';
 import 'package:mute_music_app/src/data/local/audio_pipeline_datasource.dart';
 import 'package:mute_music_app/src/data/local/language_storage.dart';
 import 'package:mute_music_app/src/data/local/model_storage.dart';
@@ -30,7 +31,7 @@ import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart'
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/get_language_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
-import 'package:mute_music_app/src/domain/use_cases/pick_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/set_language_use_case.dart';
@@ -62,6 +63,7 @@ void setupInjector(SharedPreferences prefs) {
     ..registerLazySingleton<ImagePicker>(ImagePicker.new)
     ..registerLazySingleton<VideoMuteDatasource>(VideoMuteDatasource.new)
     ..registerLazySingleton<TempFilesDatasource>(TempFilesDatasource.new)
+    ..registerLazySingleton<AudioFileDatasource>(AudioFileDatasource.new)
     ..registerLazySingleton<ModelStorage>(ModelStorage.new)
     ..registerLazySingleton<ModelDownloadService>(
       () => ModelDownloadService(
@@ -85,10 +87,10 @@ void setupInjector(SharedPreferences prefs) {
       () => RemoveMusicUseCase(injector()),
     )
     ..registerLazySingleton<VideoRepository>(
-      () => VideoRepositoryImpl(injector(), injector(), injector()),
+      () => VideoRepositoryImpl(injector(), injector(), injector(), injector()),
     )
-    ..registerLazySingleton<PickVideoUseCase>(
-      () => PickVideoUseCase(injector()),
+    ..registerLazySingleton<PickMediaUseCase>(
+      () => PickMediaUseCase(injector()),
     )
     ..registerLazySingleton<MuteVideoUseCase>(
       () => MuteVideoUseCase(injector()),

@@ -49,6 +49,7 @@ dependencies:
   flutter_onnxruntime: ^1.8.4
   fftea: ^1.5.0+1
   shared_preferences: ^2.5.5
+  file_picker: ^11.0.3
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +65,7 @@ dev_dependencies:
   bloc_test: ^10.0.0
   mocktail: ^1.0.5
   path_provider_platform_interface: ^2.1.2
+  video_player_platform_interface: ^6.7.0
   plugin_platform_interface: ^2.1.8
   integration_test:
     sdk: flutter

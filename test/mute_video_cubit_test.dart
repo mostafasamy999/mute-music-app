@@ -11,11 +11,11 @@ import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
-import 'package:mute_music_app/src/domain/use_cases/pick_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
 
-class _MockPick extends Mock implements PickVideoUseCase {}
+class _MockPick extends Mock implements PickMediaUseCase {}
 
 class _MockMute extends Mock implements MuteVideoUseCase {}
 

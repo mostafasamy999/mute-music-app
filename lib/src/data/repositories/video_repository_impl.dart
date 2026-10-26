@@ -5,6 +5,7 @@ import 'package:gal/gal.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
+import 'package:mute_music_app/src/data/local/audio_file_datasource.dart';
 import 'package:mute_music_app/src/data/local/temp_files_datasource.dart';
 import 'package:mute_music_app/src/data/local/video_mute_datasource.dart';
 import 'package:mute_music_app/src/domain/entities/clip_range.dart';
@@ -12,24 +13,44 @@ import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/repositories/video_repository.dart';
 
 class VideoRepositoryImpl implements VideoRepository {
-  const VideoRepositoryImpl(this._picker, this._datasource, this._tempFiles);
+  const VideoRepositoryImpl(
+    this._picker,
+    this._datasource,
+    this._tempFiles,
+    this._audioFiles,
+  );
 
   final ImagePicker _picker;
   final VideoMuteDatasource _datasource;
   final TempFilesDatasource _tempFiles;
+  final AudioFileDatasource _audioFiles;
 
   @override
-  Future<DataState<VideoAsset?>> pickFromGallery() async {
+  Future<DataState<MediaAsset?>> pick(MediaKind kind) async {
     try {
-      final XFile? file = await _picker.pickVideo(source: ImageSource.gallery);
-      if (file == null) return const DataSuccess<VideoAsset?>(null);
-      return DataSuccess<VideoAsset?>(
-        _toAsset(file.path, duration: await _durationOf(file.path)),
+      final String? path = await _pickPath(kind);
+      if (path == null) return const DataSuccess<MediaAsset?>(null);
+      // An image has no length; sound and video do.
+      final Duration? duration = kind == MediaKind.image
+          ? null
+          : await _durationOf(path);
+      return DataSuccess<MediaAsset?>(
+        _toAsset(path, kind: kind, duration: duration),
       );
     } on Object {
-      return const DataFailed<VideoAsset?>(AppFailure.pickFailed);
+      return const DataFailed<MediaAsset?>(AppFailure.pickFailed);
     }
   }
+
+  Future<String?> _pickPath(MediaKind kind) async => switch (kind) {
+    MediaKind.video => (await _picker.pickVideo(
+      source: ImageSource.gallery,
+    ))?.path,
+    MediaKind.image => (await _picker.pickImage(
+      source: ImageSource.gallery,
+    ))?.path,
+    MediaKind.audio => await _audioFiles.pick(),
+  };
 
   @override
   Future<DataState<VideoAsset>> removeSound(VideoAsset source) async {
@@ -122,10 +143,16 @@ class VideoRepositoryImpl implements VideoRepository {
     }
   }
 
-  VideoAsset _toAsset(String path, {Duration? duration, ClipRange? range}) {
+  VideoAsset _toAsset(
+    String path, {
+    MediaKind kind = MediaKind.video,
+    Duration? duration,
+    ClipRange? range,
+  }) {
     final File file = File(path);
     return VideoAsset(
       path: path,
+      kind: kind,
       sizeInBytes: file.existsSync() ? file.lengthSync() : null,
       duration: duration,
       range: range,

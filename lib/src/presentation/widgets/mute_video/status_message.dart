@@ -48,7 +48,6 @@ class StatusMessage extends StatelessWidget {
   }
 
   String? _text(BuildContext context, _Data data) => switch (data.status) {
-    MuteVideoStatus.initial => S.of(context).emptyHint,
     MuteVideoStatus.cutting => S.of(context).cutting,
     MuteVideoStatus.muting => S.of(context).working,
     MuteVideoStatus.preparingModel => S.of(context).downloadingModel,
@@ -59,7 +58,10 @@ class StatusMessage extends StatelessWidget {
           ? S.of(context).readyToSaveMusic
           : S.of(context).readyToSave,
     MuteVideoStatus.saved => S.of(context).savedToGallery,
-    MuteVideoStatus.picking || MuteVideoStatus.failure => null,
+    // A picked file needs no line: the actions under it say what to do.
+    MuteVideoStatus.initial ||
+    MuteVideoStatus.picking ||
+    MuteVideoStatus.failure => null,
   };
 
   String _percent(BuildContext context, double progress) =>

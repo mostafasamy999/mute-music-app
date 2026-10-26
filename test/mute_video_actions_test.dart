@@ -208,6 +208,16 @@ void main() {
       );
     });
 
+    testWidgets('a sound part shows Save to Music, which calls the cubit', (
+      WidgetTester tester,
+    ) async {
+      when(() => cubit.saveToMusic()).thenAnswer((_) async {});
+      await pump(tester, MuteVideoState(source: _soundPart, original: _sound));
+
+      await tester.tap(find.text('Save to Music'));
+      verify(() => cubit.saveToMusic()).called(1);
+    });
+
     testWidgets('Convert to audio calls the cubit', (
       WidgetTester tester,
     ) async {
@@ -253,7 +263,7 @@ void main() {
       expect(find.byTooltip('Choose a part'), findsNothing);
     });
 
-    testWidgets('a sound hides Remove music only until S13', (
+    testWidgets('a sound shows Remove music only (S13)', (
       WidgetTester tester,
     ) async {
       await pump(
@@ -261,7 +271,7 @@ void main() {
         const MuteVideoState(source: _sound, original: _sound),
       );
 
-      expect(find.text('Remove music only'), findsNothing);
+      expect(find.text('Remove music only'), findsOneWidget);
     });
 
     testWidgets('a video has the cut icon; it is off during a job', (

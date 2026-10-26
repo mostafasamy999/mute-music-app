@@ -62,6 +62,8 @@ PODS:
   - video_player_avfoundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - whisper_cpp_flutter_plus (0.5.0):
+    - Flutter
 
 DEPENDENCIES:
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
@@ -73,6 +75,7 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
+  - whisper_cpp_flutter_plus (from `.symlinks/plugins/whisper_cpp_flutter_plus/ios`)
 
 SPEC REPOS:
   trunk:
@@ -102,6 +105,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   video_player_avfoundation:
     :path: ".symlinks/plugins/video_player_avfoundation/darwin"
+  whisper_cpp_flutter_plus:
+    :path: ".symlinks/plugins/whisper_cpp_flutter_plus/ios"
 
 SPEC CHECKSUMS:
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
@@ -119,7 +124,8 @@ SPEC CHECKSUMS:
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
   video_player_avfoundation: dd410b52df6d2466a42d28550e33e4146928280a
+  whisper_cpp_flutter_plus: 1cda646a315da7c5f16876e1737e4135ce7c8fda
 
-PODFILE CHECKSUM: c0915517eae1a513480956f02c7781054ca94770
+PODFILE CHECKSUM: 07d69f586937e3baced8486c0dae969e9686bd33
 
 COCOAPODS: 1.16.2

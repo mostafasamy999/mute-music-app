@@ -19,6 +19,10 @@ abstract interface class VideoRepository {
 
   Future<DataState<void>> saveToGallery(VideoAsset video);
 
+  /// Saves a sound file where music apps (Android) or Files (iOS) find it
+  /// (spec 006 F10).
+  Future<DataState<void>> saveToMusic(MediaAsset audio);
+
   /// Frees a file the app made and no longer shows. Best effort: never throws,
   /// and leaves files the app did not make alone.
   Future<void> discard(VideoAsset video);

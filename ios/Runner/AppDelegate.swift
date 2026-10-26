@@ -40,6 +40,14 @@ import os
                 Self.handleCutAudio(call: call, result: result)
             case "exportAudio":
                 Self.handleExportAudio(call: call, result: result)
+            case "saveAudio":
+                Self.handleSaveAudio(call: call, result: result)
+            case "encodeVoices":
+                Self.handleEncodeVoices(call: call, result: result)
+            case "recognizeText":
+                Self.handleRecognizeText(call: call, result: result)
+            case "ocrSupportsArabic":
+                result(TextRecognizer.supportsArabic())
             case "videoDuration":
                 Self.handleVideoDuration(call: call, result: result)
             default:
@@ -216,6 +224,90 @@ import os
                     result(export.path)
                 case .failure(let error):
                     result(exportError(error, fallback: "convert_failed"))
+                }
+            }
+        }
+    }
+
+    /// Spec 006 F10 (Q5): apps can't add to the Music library on iOS, so the
+    /// file goes into Documents/Mute Video, which the Files app shows under
+    /// On My iPhone › Mute Video (UIFileSharingEnabled in Info.plist).
+    private static func handleSaveAudio(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let args = call.arguments as? [String: Any],
+              let sourcePath = args["sourcePath"] as? String, !sourcePath.isEmpty,
+              let name = args["name"] as? String, !name.isEmpty else {
+            result(FlutterError(code: "bad_argument", message: "sourcePath or name is missing", details: nil))
+            return
+        }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let files = FileManager.default
+            do {
+                let documents = try files.url(
+                    for: .documentDirectory, in: .userDomainMask,
+                    appropriateFor: nil, create: true
+                )
+                let folder = documents.appendingPathComponent("Mute Video", isDirectory: true)
+                try files.createDirectory(at: folder, withIntermediateDirectories: true)
+                let target = folder.appendingPathComponent(name)
+                if files.fileExists(atPath: target.path) {
+                    try files.removeItem(at: target)
+                }
+                try files.copyItem(at: URL(fileURLWithPath: sourcePath), to: target)
+                DispatchQueue.main.async { result(nil) }
+            } catch {
+                DispatchQueue.main.async {
+                    result(FlutterError(code: "save_failed", message: error.localizedDescription, details: nil))
+                }
+            }
+        }
+    }
+
+    /// Spec 006 F8: offline text from an image (Vision, Arabic + English).
+    private static func handleRecognizeText(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let args = call.arguments as? [String: Any],
+              let imagePath = args["imagePath"] as? String, !imagePath.isEmpty else {
+            result(FlutterError(code: "bad_argument", message: "imagePath is missing", details: nil))
+            return
+        }
+        TextRecognizer.recognize(imagePath: imagePath) { outcome in
+            DispatchQueue.main.async {
+                switch outcome {
+                case .success(let text):
+                    result(text)
+                case .failure(TextRecognizerError.unreadableImage):
+                    result(FlutterError(code: "unreadable_image", message: "image can't be read", details: nil))
+                case .failure(let error):
+                    result(FlutterError(code: "ocr_failed", message: error.localizedDescription, details: nil))
+                }
+            }
+        }
+    }
+
+    /// Spec 006 F6: the separated voices of a sound file into an .m4a.
+    private static func handleEncodeVoices(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let args = call.arguments as? [String: Any],
+              let pcmPath = args["pcmPath"] as? String, !pcmPath.isEmpty,
+              let sampleRate = (args["sampleRate"] as? NSNumber)?.doubleValue,
+              let channels = (args["channels"] as? NSNumber)?.intValue else {
+            result(FlutterError(code: "bad_argument", message: "pcmPath, sampleRate or channels is missing", details: nil))
+            return
+        }
+        PcmEncoder.encode(pcmPath: pcmPath, sampleRate: sampleRate, channels: channels) { outcome in
+            DispatchQueue.main.async {
+                switch outcome {
+                case .success(let path):
+                    result(path)
+                case .failure(let error):
+                    result(FlutterError(code: "encode_failed", message: error.localizedDescription, details: nil))
                 }
             }
         }

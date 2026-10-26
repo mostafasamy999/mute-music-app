@@ -12,5 +12,10 @@ enum AppFailure {
   cutFailed,
   tooLongForMusic,
   convertFailed,
+  noTextFound,
+  extractFailed,
+  speechModelMissing,
+  speechModelDownloadFailed,
+  tooLongForText,
   languageSaveFailed,
 }

@@ -291,4 +291,52 @@ void main() {
       });
     }
   });
+
+  group('save to music (spec 006 S11)', () {
+    const MediaAsset audio = MediaAsset(
+      path: '/tmp/export_1.m4a',
+      kind: MediaKind.audio,
+    );
+
+    test('saves with a readable, time-stamped .m4a name', () async {
+      final VideoRepositoryImpl timed = VideoRepositoryImpl(
+        picker,
+        datasource,
+        tempFiles,
+        audioFiles,
+        now: () => DateTime(2026, 10, 26, 13, 5, 9),
+      );
+      when(
+        () => datasource.saveAudio(any(), name: any(named: 'name')),
+      ).thenAnswer((_) async {});
+
+      expect(await timed.saveToMusic(audio), isA<DataSuccess<void>>());
+      verify(
+        () => datasource.saveAudio(
+          audio.path,
+          name: 'Mute Video 2026-10-26 13.05.09.m4a',
+        ),
+      ).called(1);
+    });
+
+    for (final (Object error, AppFailure failure) in <(Object, AppFailure)>[
+      (
+        PlatformException(code: 'permission_denied'),
+        AppFailure.permissionDenied,
+      ),
+      (PlatformException(code: 'save_failed'), AppFailure.saveFailed),
+      (MissingPluginException(), AppFailure.saveFailed),
+    ]) {
+      test('$error fails as ${failure.name} and never throws', () async {
+        when(
+          () => datasource.saveAudio(any(), name: any(named: 'name')),
+        ).thenThrow(error);
+
+        expect(
+          (await repository.saveToMusic(audio) as DataFailed<void>).failure,
+          failure,
+        );
+      });
+    }
+  });
 }

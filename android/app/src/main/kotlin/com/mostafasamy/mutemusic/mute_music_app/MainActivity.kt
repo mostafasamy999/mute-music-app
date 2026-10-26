@@ -1,7 +1,9 @@
 package com.mostafasamy.mutemusic.mute_music_app
 
+import android.Manifest
 import android.app.ActivityManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Debug
 import android.os.Handler
 import android.os.Looper
@@ -16,10 +18,15 @@ class MainActivity : FlutterActivity() {
 
     private companion object {
         const val CHANNEL = "com.mostafasamy.mutemusic/video"
+        const val STORAGE_REQUEST = 4101
     }
 
     private val worker = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    /** A Save to Music waiting for the storage permission (Android 9 and older). */
+    private var pendingSave: (() -> Unit)? = null
+    private var pendingSaveResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -33,6 +40,9 @@ class MainActivity : FlutterActivity() {
                     "cutVideo" -> cutVideo(call, result)
                     "cutAudio" -> cutAudio(call, result)
                     "exportAudio" -> exportAudio(call, result)
+                    "saveAudio" -> saveAudio(call, result)
+                    "recognizeText" -> recognizeText(call, result)
+                    "encodeVoices" -> encodeVoices(call, result)
                     "videoDuration" -> videoDuration(call, result)
                     else -> result.notImplemented()
                 }
@@ -176,6 +186,97 @@ class MainActivity : FlutterActivity() {
             } catch (error: Exception) {
                 mainHandler.post { result.error("convert_failed", error.message, null) }
             }
+        }
+    }
+
+    /** Spec 006 F10: Save to Music, into the shared Music/Mute Video folder. */
+    private fun saveAudio(call: MethodCall, result: MethodChannel.Result) {
+        val sourcePath = call.argument<String>("sourcePath")
+        val name = call.argument<String>("name")
+        if (sourcePath.isNullOrEmpty() || name.isNullOrEmpty()) {
+            result.error("bad_argument", "sourcePath or name is missing", null)
+            return
+        }
+        val save = {
+            worker.execute {
+                try {
+                    AudioSaver.save(applicationContext, sourcePath, name)
+                    mainHandler.post { result.success(null) }
+                } catch (error: Exception) {
+                    mainHandler.post { result.error("save_failed", error.message, null) }
+                }
+            }
+        }
+        val permission = Manifest.permission.WRITE_EXTERNAL_STORAGE
+        if (!AudioSaver.needsPermission() ||
+            checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+        ) {
+            save()
+            return
+        }
+        // Only one request at a time; a second tap while asking is refused.
+        if (pendingSave != null) {
+            result.error("save_failed", "already asking for the permission", null)
+            return
+        }
+        pendingSave = save
+        pendingSaveResult = result
+        requestPermissions(arrayOf(permission), STORAGE_REQUEST)
+    }
+
+    /** Spec 006 F8: offline text from an image (Tesseract, English + Arabic). */
+    private fun recognizeText(call: MethodCall, result: MethodChannel.Result) {
+        val imagePath = call.argument<String>("imagePath")
+        if (imagePath.isNullOrEmpty()) {
+            result.error("bad_argument", "imagePath is missing", null)
+            return
+        }
+        worker.execute {
+            try {
+                val text = TextRecognizer.recognize(applicationContext, imagePath)
+                mainHandler.post { result.success(text) }
+            } catch (error: UnreadableImageException) {
+                mainHandler.post { result.error("unreadable_image", error.message, null) }
+            } catch (error: Exception) {
+                mainHandler.post { result.error("ocr_failed", error.message, null) }
+            }
+        }
+    }
+
+    /** Spec 006 F6: the separated voices of a sound file into an .m4a. */
+    private fun encodeVoices(call: MethodCall, result: MethodChannel.Result) {
+        val pcmPath = call.argument<String>("pcmPath")
+        val sampleRate = call.argument<Number>("sampleRate")?.toInt()
+        val channels = call.argument<Number>("channels")?.toInt()
+        if (pcmPath.isNullOrEmpty() || sampleRate == null || channels == null) {
+            result.error("bad_argument", "pcmPath, sampleRate or channels is missing", null)
+            return
+        }
+        worker.execute {
+            try {
+                val output = PcmEncoder.encode(pcmPath, sampleRate, channels, cacheDir)
+                mainHandler.post { result.success(output) }
+            } catch (error: Exception) {
+                mainHandler.post { result.error("encode_failed", error.message, null) }
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != STORAGE_REQUEST) return
+        val save = pendingSave
+        val result = pendingSaveResult
+        pendingSave = null
+        pendingSaveResult = null
+        if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            save?.invoke()
+        } else {
+            result?.error("permission_denied", "storage permission denied", null)
         }
     }
 

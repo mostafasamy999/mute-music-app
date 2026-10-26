@@ -1,6 +1,6 @@
 # 006 Media Workspace: Implementation Plan
 
-**Spec:** [spec.md](spec.md) v2.4  
+**Spec:** [spec.md](spec.md) v2.6  
 **Branch:** `feature/004-app-language` (as chosen), starting at `b504eaf`  
 **Last updated:** 2026-10-26
 
@@ -37,10 +37,10 @@ Status: `[x]` Completed · `[ ]` Pending, In Progress or Blocked (the note says 
 - [x] **S8** Cut icon (video, then sound); original label and Full video (W5). *Device check of the sound cut left for S15*
 - [x] **S9** View original screen (W6)
 - [x] **S10** Convert to audio: M4A, native (F7, W7). *Android device check left for S15*
-- [ ] **S11** Save to Music: Android Music folder, iOS Files app (F10, W7)
-- [ ] **S12** Extract text from an image (Tesseract, AR+EN) + Text screen (F8, §5, W8). *Starts with a spike*
-- [ ] **S13** Remove music only on a sound file (F6). *Needs approval: new native methods next to `AudioPipeline`*
-- [ ] **S14** Extract text from sound or video (Whisper, offline) (F8, W8). *Starts with a spike*
+- [x] **S11** Save to Music: Android Music folder, iOS Files app (F10, W7). *Device checks left for S15*
+- [x] **S12** Extract text from an image + Text screen (F8, §5, W8). *Android: Tesseract; iOS: Vision (spike). Android device check left for S15*
+- [x] **S13** Remove music only on a sound file (F6). *Full model run on a device left for S15*
+- [x] **S14** Extract text from sound or video (Whisper, offline) (F8, W8). *Phones and Android left for S15*
 - [ ] **S15** Regression and device checks (AC1–AC10)
 - [ ] **S16** Final review
 
@@ -418,118 +418,159 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 ## S11 Save to Music
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26), except the device checks  
 **Goal:** F10.  
 **Dependencies:** S10  
-**Files likely to change:** native `saveAudio` (Android), `Info.plist` (iOS), new `SaveAudioUseCase`, cubit action, ARB, tests
+**Files changed:**
+- New native: `android/.../AudioSaver.kt`; `saveAudio` in `MainActivity.kt` (with the storage permission request on Android 9 and older) and `AppDelegate.swift`; `ios/Runner/Info.plist` (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`)
+- `video_mute_datasource.dart` (`saveAudio`), `video_repository.dart` + `video_repository_impl.dart` (`saveToMusic`, name "Mute Video yyyy-MM-dd HH.mm.ss.m4a"), new `use_cases/save_audio_use_case.dart`, `injector.dart`
+- `mute_video_state.dart` (`savedToMusic` status), `mute_video_cubit.dart` (`saveToMusic`; 9th use case)
+- New `widgets/mute_video/save_to_music_button.dart`; `mute_video_actions.dart` (built), `status_message.dart`, `screens/mute_video_screen.dart` (toast)
+- ARB + generated l10n (`saveToMusic`, `savedToMusicAndroid`, `savedToMusicIos`)
+- Tests: `video_repository_impl_test.dart` (+4), `choose_part_cubit_test.dart` (+3), `mute_video_actions_test.dart` (+1), cubit constructions; `integration_test/audio_export_test.dart` (+1)
 
 **Tasks**
-- [ ] Android: `MediaStore.Audio.Media` insert into `Music/Mute Video` (API 29+)
-- [ ] Android: `WRITE_EXTERNAL_STORAGE` path for API ≤ 28
-- [ ] iOS: copy into the app's `Documents/` with `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` (Files › On My iPhone › Mute Video, Q5)
+- [x] Android: `MediaStore.Audio.Media` insert into `Music/Mute Video` (API 29+) *(pending entry until the copy is complete; deleted on failure)*
+- [x] Android: `WRITE_EXTERNAL_STORAGE` path for API ≤ 28 *(asks for the permission, then saves; refused → `errorPermission`)*
+- [x] iOS: copy into the app's `Documents/` with `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` (Files › On My iPhone › Mute Video, Q5)
 
 **Acceptance**
-- [ ] Spec AC6 on Android
-- [ ] Spec AC6 on iOS
+- [ ] Spec AC6 on Android *(device: S15)*
+- [ ] Spec AC6 on iOS *(the integration test passed on the simulator: the file lands in Documents/Mute Video with the same size; seeing it in the Files app: S15)*
 
 **Tests**
-- [ ] Repository and cubit tests
-- [ ] Manual check on both platforms
+- [x] Repository and cubit tests *(name, permission denied, failures; save converted sound, untouched sound and video ignored, refused permission)*
+- [x] Widget: a sound part shows Save to Music, which calls the cubit
+- [x] Full suite: 175 pass (167 → 175)
+- [ ] Manual check on both platforms *(S15)*
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter build apk --debug` and `flutter build ios --simulator --debug` succeed
 
 ---
 
 ## S12 Extract text from an image + Text screen
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26), except the Android device check  
 **Goal:** F8 (image), §5, W8.  
 **Dependencies:** S7  
-**Files likely to change:** new `TextRecognitionRepository` + datasource, use case, cubit action, new route `/text` + `screens/text_screen.dart`, `pubspec.yaml`, ARB, tests
+**Files changed:**
+- Native: new `android/.../TextRecognizer.kt` (Tesseract4Android) + `android/app/src/main/assets/tessdata/{eng,ara}.traineddata` (tessdata_fast, Apache-2.0, 4.1 + 1.4 MB), `android/build.gradle.kts` (JitPack), `android/app/build.gradle.kts` (`cz.adaptech.tesseract4android:tesseract4android:4.9.0`); new `ios/Runner/TextRecognizer.swift` (Vision); `recognizeText` (+ `ocrSupportsArabic` on iOS) in `MainActivity.kt` / `AppDelegate.swift`; pbxproj
+- New: `domain/repositories/text_repository.dart`, `data/repositories/text_repository_impl.dart`, `domain/use_cases/extract_text_use_case.dart`, `screens/text_screen.dart`, `widgets/mute_video/extract_text_button.dart`
+- `video_mute_datasource.dart` (`recognizeText`), `app_failure.dart` + `failure_extensions.dart` (`noTextFound`, `extractFailed`), `mute_video_state.dart` (`text`, `extracting`, `textReady`), `mute_video_cubit.dart` (`extractText`, `updateText`, `closeText`; 10th use case), `mute_video_screen.dart` (opens the Text screen), `mute_video_actions.dart`, `status_message.dart`, `injector.dart`, ARB + generated l10n
+- Tests: new `test/extract_text_test.dart`, new `integration_test/ocr_test.dart`, cubit constructions
 
 **Tasks**
-- [ ] **Spike:** Tesseract (eng + ara, `tessdata_fast` vs `tessdata_best`) through a maintained Flutter plugin or own platform code
-- [ ] Spike: measure accuracy on 5 sample images (printed Arabic, printed English, mixed, a phone photo of a page, a screenshot) and time on the SM-A515F
-- [ ] Spike: decide bundled vs downloaded language data, and record the result here
-- [ ] Repository, use case, cubit action
-- [ ] Text screen: editable field, Copy button, RTL by content
+- [x] **Spike:** Tesseract through a maintained Flutter plugin or own platform code *(`flutter_tesseract_ocr` 0.4.31 tried and dropped: on iOS it never answers when recognition returns nothing, copies its data into Documents (visible in Files since S11), and needs the data in the app bundle by hand. Own code instead)*
+- [x] Spike: measure accuracy … and time on the SM-A515F *(not on the SM-A515F: no device here. Checked on the iOS 26 simulator with drawn English and Arabic text; Android accuracy and time: S15)*
+- [x] Spike: decide bundled vs downloaded language data, and record the result here *(**Android: Tesseract with bundled tessdata_fast eng+ara**, ~5.5 MB, offline from the first launch; **iOS: Apple Vision**, built in, offline, reads `ar-SA` on iOS 26 (checked: `supportedRecognitionLanguages` on macOS 26 and `ocrSupportsArabic` on the simulator). Spec v2.5 updated)*
+- [x] Repository, use case, cubit action *(the last edit is kept and shown again; Read again replaces it, Q10)*
+- [x] Text screen: editable field, Copy button, RTL by content *(direction from the text itself via `Bidi`)*
 
 **Acceptance**
-- [ ] Spec AC2
-- [ ] Spec AC10
+- [x] Spec AC2 *(image → Text screen → edit → Copy puts the edited text on the clipboard: widget test)*
+- [x] Spec AC10 *(Arabic text is right to left in the English UI: widget test; Arabic read back on the simulator)*
 
 **Tests**
-- [ ] Repository and cubit tests
-- [ ] Widget test: edit, then Copy puts the edited text on the clipboard
+- [x] Repository and cubit tests (10): trimmed text, no text, failures, sound/video not yet; read → Text screen, last edit kept, read again, no text, close, new file drops the text
+- [x] Widget tests (4): edit + Copy, RTL, Read again, Extract text shown for images only
+- [x] `integration_test/ocr_test.dart` on the **iPhone 16 Pro simulator (iOS 26)**: 3/3 (English "Hello World", Arabic "مرحبا بالعالم", unreadable file → `unreadable_image`)
+- [ ] The same on Android *(S15)*
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff *(again a folder-wide format touched two unrelated files; reverted)*
+- [x] `flutter build apk --debug` and `flutter build ios --simulator --debug` succeed
+
+**Notes:** the Android Tesseract path compiles and links but has not read an image yet. A photo with small or skewed text will read worse with Tesseract than with Vision; worth a check with real photos (S15).
 
 ---
 
 ## S13 Remove music only on a sound file
 
-**Status:** Pending. **Needs approval.**  
+**Status:** Completed (2026-10-26), except a full run with the model on a device. Started on the user's request ("S11, 12, 13"), as the plan's approval.  
 **Goal:** F6, with the same separation.  
-**Dependencies:** S5, S6, S10 (shares the audio writer)  
-**Approach:** the separation core (model, worker, chunks) is reused as is. Only two **new** native methods are added beside `AudioPipeline`: read PCM from a sound-only file, and encode the voices PCM to an `.m4a`. A new small repository method wires them around the existing worker call. The existing `extract`/`mux` methods and `MusicRemovalRepositoryImpl` are not edited.
+**Dependencies:** S5, S6, S10  
+**Approach (as planned):** the separation core (model, worker, chunks) is reused as is. The existing native `extractAudio` already reads a sound-only file (it only needs an audio track), so only **one** new native method was needed: `encodeVoices` (float32 PCM → `.m4a`) next to `AudioPipeline`. A new repository wires extract → worker → encode. `MusicRemovalRepositoryImpl` and `AudioPipeline` are not edited.  
+**Files changed:**
+- Native: new `android/.../PcmEncoder.kt`, `ios/Runner/PcmEncoder.swift` (streams the PCM in chunks); `encodeVoices` in `MainActivity.kt` / `AppDelegate.swift`; pbxproj
+- New `data/repositories/sound_music_removal_repository_impl.dart`; `use_cases/remove_music_use_case.dart` (sound → new repository, video → the original one); `video_mute_datasource.dart` (`encodeVoices`); `injector.dart`; `mute_video_actions.dart` (Remove music shown for sound)
+- Tests: new `test/sound_music_removal_test.dart`; `mute_video_actions_test.dart`; `integration_test/audio_export_test.dart` (+1)
 
 **Tasks**
-- [ ] Get approval
-- [ ] New native method: read PCM from a sound-only file (Android, iOS)
-- [ ] New native method: encode the voices PCM to `.m4a` (Android, iOS)
-- [ ] New repository method that wires them around the existing worker call
+- [x] Get approval
+- [x] New native method: read PCM from a sound-only file (Android, iOS) *(not needed: the existing `extractAudio` already does it; called, not changed)*
+- [x] New native method: encode the voices PCM to `.m4a` (Android, iOS)
+- [x] New repository method that wires them around the existing worker call
 
 **Acceptance**
-- [ ] Spec AC3
-- [ ] Video Remove music output byte-for-byte unchanged on the test clip (VIP)
+- [ ] Spec AC3 *(a real sound file with music through the model: S15)*
+- [x] Video Remove music output byte-for-byte unchanged on the test clip (VIP) *(no diff in any VIP file; the use case sends videos to the same repository as before: unit test. A byte comparison on a device: S15)*
 
 **Tests**
-- [ ] Repository tests for the new method
-- [ ] Device check with a sound file
+- [x] Repository tests (4): extract → separate → encode, sound result with steps in order and no PCM left; failed encode; no audio track; no model
+- [x] Use case tests (2): sound → sound pipeline, video → original pipeline
+- [x] `encodeVoices` on the **iOS simulator**: 1 s of float32 stereo → 1 s `nomusic_*.m4a`
+- [ ] Device check with a sound file *(S15)*
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests: 197 pass (175 → 197 with S12 and S13)
+- [x] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter build apk --debug` and `flutter build ios --simulator --debug` succeed
 
 ---
 
 ## S14 Extract text from sound or video
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26), except real phones (Metal) and Android  
 **Goal:** F8 for sound and video, offline, Arabic + English.  
-**Dependencies:** S12 (Text screen), S10 (audio paths)
+**Dependencies:** S12 (Text screen), S10 (audio paths)  
+**Files changed:**
+- `pubspec.yaml`/`.lock`: `whisper_cpp_flutter_plus` 0.5.1 (whisper.cpp 1.9.2)
+- New: `data/local/speech_audio.dart` (16 kHz mono, isolate), `data/local/speech_datasource.dart` (model + transcription; CPU on the iOS simulator), `domain/repositories/speech_model_repository.dart`, `data/repositories/speech_model_repository_impl.dart`, `domain/use_cases/speech_model_use_case.dart`
+- `text_repository.dart` / `text_repository_impl.dart` (sound/video path, PCM deleted on every path), `extract_text_use_case.dart` (progress), `app_failure.dart` + `failure_extensions.dart` (`speechModelMissing`, `speechModelDownloadFailed`, `tooLongForText`), `mute_video_state.dart` (`confirmSpeechDownload`, `downloadingSpeech`, progress), `mute_video_cubit.dart` (`downloadSpeechModel`, `declineSpeechDownload`; 11th use case), `mute_video_screen.dart` (download dialog, too-long snackbar), `status_message.dart`, `mute_video_actions.dart` (no hidden actions left), `injector.dart`, ARB + generated l10n
+- `android/app/src/main/AndroidManifest.xml` (plugin's `RECORD_AUDIO` removed); `ios/Podfile` (`-Wl,-u,_wf_*` for Pods-Runner) + `Podfile.lock`
+- Tests: new `test/speech_audio_test.dart`, `test/extract_text_test.dart` (+speech), cubit constructions; new `integration_test/speech_test.dart`
 
 **Tasks**
-- [ ] **Spike:** whisper.cpp through a maintained Flutter binding or own FFI; models `base` and `small` (multilingual)
-- [ ] Spike: accuracy on Arabic and English clips, speed and memory peak on the SM-A515F; pick the model and record it here
-- [ ] Model download (separate from the separation model; size + SHA-256; progress; ask on mobile data)
-- [ ] Audio in: call the existing extract method (calling, not editing) and resample to 16 kHz mono in a **new** file
-- [ ] Run in a background isolate with steps
-- [ ] Length limit (default 5 min, cut first) and cancel-safe cleanup
-- [ ] Reuse the Text screen
+- [x] **Spike:** whisper.cpp through a maintained Flutter binding *(`whisper_ggml` dropped: it bundles FFmpeg and downloads unchecked. `whisper_cpp_flutter_plus` chosen: no FFmpeg, SHA-256-pinned catalog, inference off the UI thread)*
+- [x] Spike: accuracy and speed, pick the model *(multilingual **`base`** (148 MB): `tiny` reads Arabic poorly, `small` is not in the pinned catalog. Measured on the **iPhone 16 Pro simulator, CPU**, see Tests; the SM-A515F: S15)*
+- [x] Model download (separate from the separation model; size + SHA-256; progress; ask on mobile data) *(asks before **every first** download, not only on mobile data: no connectivity package needed, and 148 MB deserves a yes either way)*
+- [x] Audio in: call the existing extract method (calling, not editing) and resample to 16 kHz mono in a **new** file
+- [x] Run in a background isolate with steps *(the conversion runs in `Isolate.run`; whisper.cpp runs on native threads; progress shown)*
+- [x] Length limit (default 5 min, cut first) and cancel-safe cleanup *(the PCM is deleted on every path; no cancel button yet, as for Remove music)*
+- [x] Reuse the Text screen
 
 **Acceptance**
-- [ ] Spec AC2 for a sound clip in Arabic and in English
-- [ ] Spec AC2 for a video clip in Arabic and in English
-- [ ] The UI stays responsive (R1)
+- [x] Spec AC2 for a sound clip in English *(simulator: exact)*
+- [x] Spec AC2 for a sound clip in Arabic *(simulator: all words right except the last, see Tests)*
+- [ ] Spec AC2 for a video clip in each language *(the video path is the same extract + Whisper; unit-tested, not run with a real video: S15)*
+- [x] The UI stays responsive (R1) *(no heavy work on the UI isolate; not timed on a phone)*
 
 **Tests**
-- [ ] Repository, worker and cubit tests
-- [ ] Device check
+- [x] Unit: `speech_audio_test` (4), repository speech path (3), cubit flow (5: ask, no, yes → download → listen, failed download, too long); 208 pass
+- [x] `integration_test/speech_test.dart` on the **iPhone 16 Pro simulator (iOS 26, CPU)**, clips made with macOS `say` (Samantha, Majed): 3/3
+  - model download + SHA-256: ready in 22 s
+  - English: "Hello World, this is a speech test for the mute video app." (exact; 12.3 s including the first model load)
+  - Arabic: said "مرحبا بكم. هذا اختبار للكلام في التطبيق." → read "مرحباً بكم هذا اختبار للكلام في الطبير" (last word wrong; 1.4 s)
+- [ ] Real speech (people, not `say`), real phones, Android *(S15)*
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter build apk --debug` and `flutter build ios --simulator --debug` succeed
 
-**Risks:** app size, model download size, slow phones.
+**Found and fixed on the way:**
+- iOS "symbol not found `wf_context_create`": the app links pods statically (needed by ONNX Runtime), which strips the plugin's C functions. The Podfile keeps just those (`-u`); the static linkage is unchanged. A dynamic framework for this pod alone was tried and refused by CocoaPods (Flutter is static).
+- iOS simulator crash in Metal while loading the 148 MB model (`MTLSimDevice newBufferWithLength`). The simulator now runs Whisper on the CPU, detected by the executable path (the simulator passes no `SIMULATOR_*` variables to the app). Phones keep Metal.
+
+**Risks / notes:** Arabic from a small model is good but not perfect; `small` would be better and slower (S15 can compare on a phone). Apple may ask about the microphone at review because the plugin links recording code; the app never records (check at release). The app grows by the whisper.cpp library.
 
 ---
 
@@ -575,6 +616,10 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 | Date | Step | Result | Files |
 |---|---|---|---|
+| 2026-10-26 | S14 | Completed (phones/Android open). whisper.cpp `base` (SHA-256, asked), sound/video → Text screen; iOS link fix + simulator CPU; 208 tests; simulator EN exact, AR one word off | see S14 |
+| 2026-10-26 | S13 | Completed (device run open). New native encodeVoices + sound repository around the existing extract and worker; use case routes by kind; 197 tests; iOS sim encode OK; VIP untouched | see S13 |
+| 2026-10-26 | S12 | Completed (Android device check open). Spike: Tesseract (bundled eng+ara) on Android, Vision on iOS; Text screen; iOS sim OCR 3/3 incl. Arabic | see S12 |
+| 2026-10-26 | S11 | Completed (device checks open). Native saveAudio (MediaStore / legacy folder with permission; iOS Documents + Files keys), Save to Music button; 175 tests, builds OK, VIP untouched | see S11 |
 | 2026-10-26 | S10 | Completed (Android device check open). `exportAudio` native + Dart, Convert to audio button, chains on the current video; 167 tests, analyze clean, Android + iOS sim builds OK; native cut/convert 3/3 on iOS simulator; VIP untouched | see S10 |
 | 2026-10-26 | S9 | Completed (device check open). `lastInput` + stored `applied`, jobs run on the current file, one cleanup rule, original icon + screen; 157 tests, analyze clean, VIP untouched | see S9 |
 | 2026-10-26 | S8 | Completed (device check open). Sound cut (new native AudioExporter), Original label, Full length; 148 tests; analyze clean; Android + iOS sim builds OK; VIP untouched | see S8 |

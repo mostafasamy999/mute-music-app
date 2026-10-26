@@ -5,6 +5,7 @@ import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/removal_steps.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/save_to_music_button.dart';
 
 typedef _Data = ({
   MuteVideoStatus status,
@@ -13,6 +14,7 @@ typedef _Data = ({
   bool showsProgress,
   bool showsSteps,
   bool converted,
+  bool speech,
 });
 
 class StatusMessage extends StatelessWidget {
@@ -28,6 +30,7 @@ class StatusMessage extends StatelessWidget {
           showsProgress: state.showsProgress,
           showsSteps: state.showsSteps,
           converted: state.applied.contains(MediaOperation.convertToAudio),
+          speech: !(state.current?.isImage ?? true),
         ),
         builder: _builder,
       );
@@ -53,6 +56,9 @@ class StatusMessage extends StatelessWidget {
     MuteVideoStatus.cutting => S.of(context).cutting,
     MuteVideoStatus.muting => S.of(context).working,
     MuteVideoStatus.converting => S.of(context).converting,
+    MuteVideoStatus.extracting =>
+      data.speech ? S.of(context).listening : S.of(context).extracting,
+    MuteVideoStatus.downloadingSpeech => S.of(context).downloadingSpeechModel,
     MuteVideoStatus.preparingModel => S.of(context).downloadingModel,
     MuteVideoStatus.removingMusic => _percent(context, data.progress),
     MuteVideoStatus.saving => S.of(context).saving,
@@ -62,8 +68,11 @@ class StatusMessage extends StatelessWidget {
           ? S.of(context).readyToSaveMusic
           : S.of(context).readyToSave,
     MuteVideoStatus.saved => S.of(context).savedToGallery,
+    MuteVideoStatus.savedToMusic => savedToMusicText(context),
     // A picked file needs no line: the actions under it say what to do.
     MuteVideoStatus.initial ||
+    MuteVideoStatus.textReady ||
+    MuteVideoStatus.confirmSpeechDownload ||
     MuteVideoStatus.picking ||
     MuteVideoStatus.failure => null,
   };

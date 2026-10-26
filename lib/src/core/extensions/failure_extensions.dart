@@ -20,5 +20,12 @@ extension AppFailureX on AppFailure {
       S.of(context).errorTooLongChoosePart(ClipLimits.maxMusicDuration.clock),
     AppFailure.languageSaveFailed => S.of(context).errorLanguageSave,
     AppFailure.convertFailed => S.of(context).errorConvertFailed,
+    AppFailure.noTextFound => S.of(context).errorNoText,
+    AppFailure.extractFailed => S.of(context).errorExtractFailed,
+    AppFailure.speechModelMissing => S.of(context).errorSpeechModelMissing,
+    AppFailure.speechModelDownloadFailed =>
+      S.of(context).errorSpeechModelDownload,
+    AppFailure.tooLongForText =>
+      S.of(context).errorTooLongForText(ClipLimits.maxMusicDuration.clock),
   };
 }

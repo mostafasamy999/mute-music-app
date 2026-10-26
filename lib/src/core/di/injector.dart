@@ -14,27 +14,36 @@ import 'package:mute_music_app/src/data/local/audio_pipeline_datasource.dart';
 import 'package:mute_music_app/src/data/local/language_storage.dart';
 import 'package:mute_music_app/src/data/local/model_storage.dart';
 import 'package:mute_music_app/src/data/local/separation_worker.dart';
+import 'package:mute_music_app/src/data/local/speech_datasource.dart';
 import 'package:mute_music_app/src/data/local/temp_files_datasource.dart';
 import 'package:mute_music_app/src/data/local/video_mute_datasource.dart';
 import 'package:mute_music_app/src/data/remote/model_download_service.dart';
 import 'package:mute_music_app/src/data/repositories/language_repository_impl.dart';
 import 'package:mute_music_app/src/data/repositories/music_removal_repository_impl.dart';
 import 'package:mute_music_app/src/data/repositories/separation_model_repository_impl.dart';
+import 'package:mute_music_app/src/data/repositories/sound_music_removal_repository_impl.dart';
+import 'package:mute_music_app/src/data/repositories/speech_model_repository_impl.dart';
+import 'package:mute_music_app/src/data/repositories/text_repository_impl.dart';
 import 'package:mute_music_app/src/data/repositories/video_repository_impl.dart';
 import 'package:mute_music_app/src/domain/repositories/language_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/music_removal_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/separation_model_repository.dart';
+import 'package:mute_music_app/src/domain/repositories/speech_model_repository.dart';
+import 'package:mute_music_app/src/domain/repositories/text_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/video_repository.dart';
 import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_leftovers_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/extract_text_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/get_language_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/save_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/speech_model_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/set_language_use_case.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -82,8 +91,19 @@ void setupInjector(SharedPreferences prefs) {
     ..registerLazySingleton<MusicRemovalRepository>(
       () => MusicRemovalRepositoryImpl(injector(), injector(), injector()),
     )
+    ..registerLazySingleton<SoundMusicRemovalRepositoryImpl>(
+      () => SoundMusicRemovalRepositoryImpl(
+        injector(),
+        injector(),
+        injector(),
+        injector(),
+      ),
+    )
     ..registerLazySingleton<RemoveMusicUseCase>(
-      () => RemoveMusicUseCase(injector()),
+      () => RemoveMusicUseCase(
+        injector<MusicRemovalRepository>(),
+        injector<SoundMusicRemovalRepositoryImpl>(),
+      ),
     )
     ..registerLazySingleton<VideoRepository>(
       () => VideoRepositoryImpl(injector(), injector(), injector(), injector()),
@@ -98,6 +118,22 @@ void setupInjector(SharedPreferences prefs) {
       () => SaveVideoUseCase(injector()),
     )
     ..registerLazySingleton<CutVideoUseCase>(() => CutVideoUseCase(injector()))
+    ..registerLazySingleton<TextRepository>(
+      () => TextRepositoryImpl(injector(), injector(), injector()),
+    )
+    ..registerLazySingleton<SpeechDatasource>(SpeechDatasource.new)
+    ..registerLazySingleton<SpeechModelRepository>(
+      () => SpeechModelRepositoryImpl(injector()),
+    )
+    ..registerLazySingleton<SpeechModelUseCase>(
+      () => SpeechModelUseCase(injector()),
+    )
+    ..registerLazySingleton<ExtractTextUseCase>(
+      () => ExtractTextUseCase(injector()),
+    )
+    ..registerLazySingleton<SaveAudioUseCase>(
+      () => SaveAudioUseCase(injector()),
+    )
     ..registerLazySingleton<ConvertToAudioUseCase>(
       () => ConvertToAudioUseCase(injector()),
     )
@@ -109,6 +145,9 @@ void setupInjector(SharedPreferences prefs) {
     )
     ..registerFactory<MuteVideoCubit>(
       () => MuteVideoCubit(
+        injector(),
+        injector(),
+        injector(),
         injector(),
         injector(),
         injector(),

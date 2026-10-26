@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mute_music_app/src/data/local/video_mute_datasource.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Spec 006 S8/S10 on a real device or simulator: the native AudioExporter
 /// behind `cutAudio` and `exportAudio`. The input is a WAV written here, so
@@ -50,6 +51,52 @@ void main() {
     expect(path.split('/').last, startsWith('export_'));
     expect((await lengthMs(path) - 2000).abs(), lessThan(120));
     File(path).deleteSync();
+  });
+
+  testWidgets('saveAudio puts the file where the user finds it', (_) async {
+    final String path = await native.exportAudio(wav.path);
+    const String name = 'Mute Video test.m4a';
+
+    await native.saveAudio(path, name: name);
+
+    if (Platform.isIOS) {
+      // Files › On My iPhone › Mute Video.
+      final File saved = File(
+        '${(await getApplicationDocumentsDirectory()).path}/Mute Video/$name',
+      );
+      expect(saved.existsSync(), isTrue);
+      expect(saved.lengthSync(), File(path).lengthSync());
+      saved.deleteSync();
+    }
+    File(path).deleteSync();
+  });
+
+  testWidgets('encodeVoices turns float32 stereo PCM into .m4a (S13)', (
+    _,
+  ) async {
+    // One second of 44.1 kHz stereo, interleaved float32, like the worker.
+    const int rate = 44100;
+    final ByteData pcm = ByteData(rate * 2 * 4);
+    for (int i = 0; i < rate; i++) {
+      final double v = math.sin(2 * math.pi * 440 * i / rate) * 0.5;
+      pcm
+        ..setFloat32(i * 8, v, Endian.little)
+        ..setFloat32(i * 8 + 4, v, Endian.little);
+    }
+    final File input = File('${Directory.systemTemp.path}/voices_test.pcm')
+      ..writeAsBytesSync(pcm.buffer.asUint8List());
+
+    final String path = await native.encodeVoices(
+      input.path,
+      sampleRate: rate,
+      channels: 2,
+    );
+
+    expect(path, endsWith('.m4a'));
+    expect(path.split('/').last, startsWith('nomusic_'));
+    expect((await lengthMs(path) - 1000).abs(), lessThan(120));
+    File(path).deleteSync();
+    input.deleteSync();
   });
 
   testWidgets('a bad range is refused and leaves no file', (_) async {

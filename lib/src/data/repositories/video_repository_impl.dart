@@ -17,13 +17,15 @@ class VideoRepositoryImpl implements VideoRepository {
     this._picker,
     this._datasource,
     this._tempFiles,
-    this._audioFiles,
-  );
+    this._audioFiles, {
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
 
   final ImagePicker _picker;
   final VideoMuteDatasource _datasource;
   final TempFilesDatasource _tempFiles;
   final AudioFileDatasource _audioFiles;
+  final DateTime Function() _now;
 
   @override
   Future<DataState<MediaAsset?>> pick(MediaKind kind) async {
@@ -142,6 +144,30 @@ class VideoRepositoryImpl implements VideoRepository {
     } on Object {
       return const DataFailed<void>(AppFailure.saveFailed);
     }
+  }
+
+  @override
+  Future<DataState<void>> saveToMusic(MediaAsset audio) async {
+    try {
+      await _datasource.saveAudio(audio.path, name: _musicName(_now()));
+      return const DataSuccess<void>(null);
+    } on PlatformException catch (error) {
+      return DataFailed<void>(
+        error.code == 'permission_denied'
+            ? AppFailure.permissionDenied
+            : AppFailure.saveFailed,
+      );
+    } on Object {
+      return const DataFailed<void>(AppFailure.saveFailed);
+    }
+  }
+
+  /// "Mute Video 2026-10-26 13.05.09.m4a": readable in a music app, sorts by
+  /// time, and two saves never share a name.
+  static String _musicName(DateTime at) {
+    String two(int value) => value.toString().padLeft(2, '0');
+    return 'Mute Video ${at.year}-${two(at.month)}-${two(at.day)} '
+        '${two(at.hour)}.${two(at.minute)}.${two(at.second)}.m4a';
   }
 
   @override

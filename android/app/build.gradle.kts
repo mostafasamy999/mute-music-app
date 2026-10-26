@@ -42,3 +42,9 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Offline OCR, English + Arabic (spec 006 S12). The language data lives
+    // in src/main/assets/tessdata (tessdata_fast, Apache-2.0).
+    implementation("cz.adaptech.tesseract4android:tesseract4android:4.9.0")
+}

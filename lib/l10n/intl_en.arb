@@ -128,5 +128,39 @@
   "convertToAudio": "Convert to audio",
   "converting": "Making the audio file...",
   "audioReady": "The audio file is ready.",
-  "errorConvertFailed": "Could not make an audio file from this video."
+  "errorConvertFailed": "Could not make an audio file from this video.",
+  "saveToMusic": "Save to Music",
+  "savedToMusicAndroid": "Saved to Music › Mute Video.",
+  "savedToMusicIos": "Saved to Files › On My iPhone › Mute Video.",
+  "extractText": "Extract text",
+  "extracting": "Reading the text...",
+  "textTitle": "Text",
+  "copyText": "Copy",
+  "copied": "Copied.",
+  "readAgain": "Read again",
+  "errorNoText": "No text was found in this file.",
+  "errorExtractFailed": "Could not read the text from this file.",
+  "errorSpeechModelMissing": "The speech model is not downloaded yet.",
+  "errorSpeechModelDownload": "Could not download the speech model. Check your connection and try again.",
+  "speechModelTitle": "Download the speech model?",
+  "speechModelBody": "Reading the words in a sound or video works offline, with a one-time download of about {size} MB. Wi-Fi is recommended.",
+  "@speechModelBody": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "download": "Download",
+  "cancel": "Cancel",
+  "downloadingSpeechModel": "Downloading the speech model...",
+  "listening": "Listening to the words...",
+  "errorTooLongForText": "This file is too long to read. Choose a part up to {limit} first.",
+  "@errorTooLongForText": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  }
 }

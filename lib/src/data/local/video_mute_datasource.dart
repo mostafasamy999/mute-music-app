@@ -71,6 +71,44 @@ class VideoMuteDatasource {
     return output;
   }
 
+  /// Copies a sound file to the phone's music storage as [name] (spec 006
+  /// F10): Music/Mute Video on Android, Files › Mute Video on iOS. Throws
+  /// [PlatformException].
+  Future<void> saveAudio(String sourcePath, {required String name}) =>
+      _channel.invokeMethod<void>('saveAudio', <String, String>{
+        'sourcePath': sourcePath,
+        'name': name,
+      });
+
+  /// Text in an image, read offline in Arabic and English (spec 006 F8).
+  /// Tesseract on Android, Apple Vision on iOS. Throws [PlatformException].
+  Future<String> recognizeText(String imagePath) async =>
+      await _channel.invokeMethod<String>('recognizeText', <String, String>{
+        'imagePath': imagePath,
+      }) ??
+      '';
+
+  /// Encodes separated voices (interleaved float32 PCM) into a new .m4a, for
+  /// Remove music on a sound file (spec 006 F6). Throws [PlatformException].
+  Future<String> encodeVoices(
+    String pcmPath, {
+    required int sampleRate,
+    required int channels,
+  }) async {
+    final String? output = await _channel.invokeMethod<String>(
+      'encodeVoices',
+      <String, Object>{
+        'pcmPath': pcmPath,
+        'sampleRate': sampleRate,
+        'channels': channels,
+      },
+    );
+    if (output == null || output.isEmpty) {
+      throw PlatformException(code: 'encode_failed');
+    }
+    return output;
+  }
+
   /// The video's length in milliseconds, or null when it can't be read.
   Future<int?> durationMs(String sourcePath) => _channel.invokeMethod<int>(
     'videoDuration',

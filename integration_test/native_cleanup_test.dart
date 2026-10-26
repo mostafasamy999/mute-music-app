@@ -162,6 +162,9 @@ void main() {
         injector(),
         injector(),
         injector(),
+        injector(),
+        injector(),
+        injector(),
       );
       // Stand-ins for the copies image_picker makes in the cache.
       final File first = clip.copySync('${cache.path}/picked_1.mp4');
@@ -191,6 +194,9 @@ void main() {
       final _QueuedPick pick = _QueuedPick();
       final MuteVideoCubit cubit = MuteVideoCubit(
         pick,
+        injector(),
+        injector(),
+        injector(),
         injector(),
         injector(),
         injector(),

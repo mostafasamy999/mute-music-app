@@ -14,10 +14,13 @@ import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.da
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/extract_text_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/save_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/speech_model_use_case.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/add_media_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/clear_file_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/mute_video_actions.dart';
@@ -69,6 +72,9 @@ void main() {
       discard,
       CutVideoUseCase(_NoRepository()),
       ConvertToAudioUseCase(_NoRepository()),
+      SaveAudioUseCase(_NoRepository()),
+      _MockExtract(),
+      _MockSpeech(),
     );
 
     blocTest<MuteVideoCubit, MuteVideoState>(
@@ -305,6 +311,10 @@ const MediaAsset _missing = MediaAsset(
 class _MockEnsureModel extends Mock implements EnsureModelReadyUseCase {}
 
 class _MockRemoveMusic extends Mock implements RemoveMusicUseCase {}
+
+class _MockExtract extends Mock implements ExtractTextUseCase {}
+
+class _MockSpeech extends Mock implements SpeechModelUseCase {}
 
 /// The use cases these tests never reach.
 class _NoRepository extends Fake implements VideoRepository {}

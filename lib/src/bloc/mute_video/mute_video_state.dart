@@ -9,11 +9,20 @@ enum MuteVideoStatus {
   cutting,
   muting,
   converting,
+  extracting,
+
+  /// The speech model is missing: the screen asks before the download.
+  confirmSpeechDownload,
+  downloadingSpeech,
   preparingModel,
   removingMusic,
   muted,
   saving,
   saved,
+  savedToMusic,
+
+  /// Extracted text is ready to show on the Text screen.
+  textReady,
   failure,
 }
 
@@ -43,6 +52,7 @@ class MuteVideoState {
     this.removal,
     this.applied = const <MediaOperation>{},
     this.lastInput,
+    this.text,
   });
 
   final MuteVideoStatus status;
@@ -74,11 +84,18 @@ class MuteVideoState {
   /// the added file for a part. The original icon opens it (spec 006 §3.2).
   final VideoAsset? lastInput;
 
+  /// The text read from the current file, with the user's edits (spec 006
+  /// §5). Dropped whenever the file changes.
+  final String? text;
+
   bool get isBusy => const <MuteVideoStatus>{
     MuteVideoStatus.picking,
     MuteVideoStatus.cutting,
     MuteVideoStatus.muting,
     MuteVideoStatus.converting,
+    MuteVideoStatus.extracting,
+    MuteVideoStatus.confirmSpeechDownload,
+    MuteVideoStatus.downloadingSpeech,
     MuteVideoStatus.preparingModel,
     MuteVideoStatus.removingMusic,
     MuteVideoStatus.saving,
@@ -124,7 +141,9 @@ class MuteVideoState {
 
   bool get showsProgress =>
       status == MuteVideoStatus.preparingModel ||
-      status == MuteVideoStatus.removingMusic;
+      status == MuteVideoStatus.removingMusic ||
+      status == MuteVideoStatus.downloadingSpeech ||
+      (status == MuteVideoStatus.extracting && !(current?.isImage ?? true));
 
   /// The music removal job shows as a list of steps instead of one line.
   bool get showsSteps => showsProgress && removal != null;
@@ -140,6 +159,7 @@ class MuteVideoState {
     double? progress,
     bool? musicOnly,
     RemovalProgress? removal,
+    String? text,
   }) {
     final MuteVideoStatus next = status ?? this.status;
     final bool removing =
@@ -156,6 +176,7 @@ class MuteVideoState {
       removal: removing ? removal ?? this.removal : null,
       applied: applied,
       lastInput: lastInput,
+      text: text ?? this.text,
     );
   }
 
@@ -206,7 +227,8 @@ class MuteVideoState {
       other.musicOnly == musicOnly &&
       other.removal == removal &&
       setEquals(other.applied, applied) &&
-      other.lastInput == lastInput;
+      other.lastInput == lastInput &&
+      other.text == text;
 
   @override
   int get hashCode => Object.hash(
@@ -220,5 +242,6 @@ class MuteVideoState {
     removal,
     Object.hashAllUnordered(applied),
     lastInput,
+    text,
   );
 }

@@ -40,4 +40,27 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
   end
+
+  # whisper_cpp_flutter_plus (spec 006 S14) looks up its C functions at run
+  # time with DynamicLibrary.process(). Linked statically like every pod here,
+  # nothing in the app calls them, so the linker would strip them ("symbol
+  # not found"). `-u` keeps exactly these. The static linkage itself is
+  # unchanged (the separation model's ONNX Runtime relies on it).
+  whisper_symbols = %w[
+    wf_benchmark wf_context_create wf_context_free wf_job_cancel wf_job_create
+    wf_job_free wf_job_progress wf_job_set_double wf_job_set_int
+    wf_job_set_string wf_last_error wf_model_info wf_run wf_string_free
+    wf_system_info wf_tokenize wf_vad_create wf_vad_free wf_vad_is_speech
+    wf_vad_reset wf_vad_segments wf_version
+  ]
+  keep = whisper_symbols.map { |name| "-Wl,-u,_#{name}" }.join(' ')
+  installer.aggregate_targets.each do |aggregate|
+    next unless aggregate.name == 'Pods-Runner'
+    aggregate.xcconfigs.each_key do |variant|
+      path = aggregate.client_root + aggregate.xcconfig_relative_path(variant)
+      config = File.read(path)
+      next if config.include?('wf_context_create')
+      File.write(path, config.sub('OTHER_LDFLAGS = ', "OTHER_LDFLAGS = #{keep} "))
+    end
+  end
 end

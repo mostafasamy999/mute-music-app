@@ -583,6 +583,176 @@ class S {
       args: [],
     );
   }
+
+  /// `Save to Music`
+  String get saveToMusic {
+    return Intl.message(
+      'Save to Music',
+      name: 'saveToMusic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Saved to Music › Mute Video.`
+  String get savedToMusicAndroid {
+    return Intl.message(
+      'Saved to Music › Mute Video.',
+      name: 'savedToMusicAndroid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Saved to Files › On My iPhone › Mute Video.`
+  String get savedToMusicIos {
+    return Intl.message(
+      'Saved to Files › On My iPhone › Mute Video.',
+      name: 'savedToMusicIos',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Extract text`
+  String get extractText {
+    return Intl.message(
+      'Extract text',
+      name: 'extractText',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reading the text...`
+  String get extracting {
+    return Intl.message(
+      'Reading the text...',
+      name: 'extracting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Text`
+  String get textTitle {
+    return Intl.message('Text', name: 'textTitle', desc: '', args: []);
+  }
+
+  /// `Copy`
+  String get copyText {
+    return Intl.message('Copy', name: 'copyText', desc: '', args: []);
+  }
+
+  /// `Copied.`
+  String get copied {
+    return Intl.message('Copied.', name: 'copied', desc: '', args: []);
+  }
+
+  /// `Read again`
+  String get readAgain {
+    return Intl.message('Read again', name: 'readAgain', desc: '', args: []);
+  }
+
+  /// `No text was found in this file.`
+  String get errorNoText {
+    return Intl.message(
+      'No text was found in this file.',
+      name: 'errorNoText',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not read the text from this file.`
+  String get errorExtractFailed {
+    return Intl.message(
+      'Could not read the text from this file.',
+      name: 'errorExtractFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The speech model is not downloaded yet.`
+  String get errorSpeechModelMissing {
+    return Intl.message(
+      'The speech model is not downloaded yet.',
+      name: 'errorSpeechModelMissing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not download the speech model. Check your connection and try again.`
+  String get errorSpeechModelDownload {
+    return Intl.message(
+      'Could not download the speech model. Check your connection and try again.',
+      name: 'errorSpeechModelDownload',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Download the speech model?`
+  String get speechModelTitle {
+    return Intl.message(
+      'Download the speech model?',
+      name: 'speechModelTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reading the words in a sound or video works offline, with a one-time download of about {size} MB. Wi-Fi is recommended.`
+  String speechModelBody(String size) {
+    return Intl.message(
+      'Reading the words in a sound or video works offline, with a one-time download of about $size MB. Wi-Fi is recommended.',
+      name: 'speechModelBody',
+      desc: '',
+      args: [size],
+    );
+  }
+
+  /// `Download`
+  String get download {
+    return Intl.message('Download', name: 'download', desc: '', args: []);
+  }
+
+  /// `Cancel`
+  String get cancel {
+    return Intl.message('Cancel', name: 'cancel', desc: '', args: []);
+  }
+
+  /// `Downloading the speech model...`
+  String get downloadingSpeechModel {
+    return Intl.message(
+      'Downloading the speech model...',
+      name: 'downloadingSpeechModel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Listening to the words...`
+  String get listening {
+    return Intl.message(
+      'Listening to the words...',
+      name: 'listening',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This file is too long to read. Choose a part up to {limit} first.`
+  String errorTooLongForText(String limit) {
+    return Intl.message(
+      'This file is too long to read. Choose a part up to $limit first.',
+      name: 'errorTooLongForText',
+      desc: '',
+      args: [limit],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

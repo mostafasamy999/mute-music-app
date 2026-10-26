@@ -2,6 +2,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Tesseract4Android, for Extract text from images (spec 006 S12).
+        maven("https://jitpack.io")
     }
 }
 

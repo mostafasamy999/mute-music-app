@@ -10,10 +10,13 @@ import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.da
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/extract_text_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/save_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/speech_model_use_case.dart';
 
 class MuteVideoCubit extends Cubit<MuteVideoState> {
   MuteVideoCubit(
@@ -25,6 +28,9 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     this._discardVideo,
     this._cutVideo,
     this._convertToAudio,
+    this._saveAudio,
+    this._extractText,
+    this._speechModel,
   ) : super(const MuteVideoState());
 
   final PickMediaUseCase _pickMedia;
@@ -35,6 +41,9 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   final DiscardVideoUseCase _discardVideo;
   final CutVideoUseCase _cutVideo;
   final ConvertToAudioUseCase _convertToAudio;
+  final SaveAudioUseCase _saveAudio;
+  final ExtractTextUseCase _extractText;
+  final SpeechModelUseCase _speechModel;
 
   /// Adds an image, a sound or a video (spec 006 F1). It replaces the current
   /// file, its part and its outputs.
@@ -64,6 +73,38 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   Future<void> convertToAudio() => _guard(AppFailure.convertFailed, _convert);
 
   Future<void> saveToGallery() => _guard(AppFailure.saveFailed, _save);
+
+  /// Reads the text in the current file and opens the Text screen (spec 006
+  /// F8). The last edited text is shown again instead of reading again,
+  /// unless [again] (Q10).
+  Future<void> extractText({bool again = false}) =>
+      _guard(AppFailure.extractFailed, () => _extract(again: again));
+
+  /// The user agreed to the one-time speech model download (spec 006 S14);
+  /// the text is read right after it.
+  Future<void> downloadSpeechModel() =>
+      _guard(AppFailure.speechModelDownloadFailed, _downloadSpeech);
+
+  /// The user said no to the download: back to the file, nothing changes.
+  void declineSpeechDownload() {
+    if (state.status == MuteVideoStatus.confirmSpeechDownload) {
+      _set(state.copyWith(status: _idleStatus));
+    }
+  }
+
+  /// The user's edits on the Text screen.
+  void updateText(String text) => _set(state.copyWith(text: text));
+
+  /// The Text screen closed: back to the file's own status.
+  void closeText() {
+    if (state.status == MuteVideoStatus.textReady) {
+      _set(state.copyWith(status: _idleStatus));
+    }
+  }
+
+  /// Saves the current sound file to the phone's music storage (spec 006
+  /// F10).
+  Future<void> saveToMusic() => _guard(AppFailure.saveFailed, _saveMusic);
 
   Future<void> _pick(MediaKind kind) async {
     _set(state.copyWith(status: MuteVideoStatus.picking));
@@ -181,6 +222,61 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
       case DataFailed<void>(:final AppFailure failure):
         _fail(failure);
     }
+  }
+
+  Future<void> _saveMusic() async {
+    final VideoAsset? file = state.current;
+    if (file == null || !file.isAudio || !state.isChanged) return;
+    _set(state.copyWith(status: MuteVideoStatus.saving));
+    switch (await _saveAudio(file)) {
+      case DataSuccess<void>():
+        _set(state.copyWith(status: MuteVideoStatus.savedToMusic));
+      case DataFailed<void>(:final AppFailure failure):
+        _fail(failure);
+    }
+  }
+
+  Future<void> _extract({required bool again}) async {
+    final VideoAsset? file = state.current;
+    if (file == null) return;
+    if (!again && state.text != null) {
+      _set(state.copyWith(status: MuteVideoStatus.textReady));
+      return;
+    }
+    if (!file.isImage) {
+      // Whisper keeps the whole track in memory, like Remove music.
+      final Duration? duration = file.duration;
+      if (duration != null && duration > ClipLimits.maxMusicDuration) {
+        return _fail(AppFailure.tooLongForText);
+      }
+      if (!await _speechModel.isReady()) {
+        _set(state.copyWith(status: MuteVideoStatus.confirmSpeechDownload));
+        return;
+      }
+    }
+    _set(state.copyWith(status: MuteVideoStatus.extracting, progress: 0));
+    switch (await _extractText(
+      file,
+      onProgress: (double p) => _set(state.copyWith(progress: p)),
+    )) {
+      case DataSuccess<String>(:final String data):
+        _set(state.copyWith(status: MuteVideoStatus.textReady, text: data));
+      case DataFailed<String>(:final AppFailure failure):
+        _fail(failure);
+    }
+  }
+
+  Future<void> _downloadSpeech() async {
+    _set(
+      state.copyWith(status: MuteVideoStatus.downloadingSpeech, progress: 0),
+    );
+    final DataState<void> result = await _speechModel.download(
+      onProgress: (double p) => _set(state.copyWith(progress: p)),
+    );
+    if (result case DataFailed<void>(:final AppFailure failure)) {
+      return _fail(failure);
+    }
+    await _extract(again: true);
   }
 
   /// Repositories already turn errors into failures. This catches whatever

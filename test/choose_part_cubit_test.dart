@@ -11,10 +11,13 @@ import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.da
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/extract_text_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/save_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/speech_model_use_case.dart';
 
 class _MockPick extends Mock implements PickMediaUseCase {}
 
@@ -31,6 +34,12 @@ class _MockDiscard extends Mock implements DiscardVideoUseCase {}
 class _MockCut extends Mock implements CutVideoUseCase {}
 
 class _MockConvert extends Mock implements ConvertToAudioUseCase {}
+
+class _MockSaveAudio extends Mock implements SaveAudioUseCase {}
+
+class _MockExtract extends Mock implements ExtractTextUseCase {}
+
+class _MockSpeech extends Mock implements SpeechModelUseCase {}
 
 /// Spec 003: choosing a part, and the Remove music length limit.
 void main() {
@@ -61,6 +70,8 @@ void main() {
   late _MockCut cut;
   late _MockSave save;
   late _MockConvert convert;
+  late _MockSaveAudio saveAudio;
+  late _MockExtract extract;
 
   setUpAll(() {
     registerFallbackValue(original);
@@ -76,6 +87,8 @@ void main() {
     cut = _MockCut();
     save = _MockSave();
     convert = _MockConvert();
+    saveAudio = _MockSaveAudio();
+    extract = _MockExtract();
     when(() => discard(any())).thenAnswer((_) async {});
   });
 
@@ -88,6 +101,9 @@ void main() {
     discard,
     cut,
     convert,
+    saveAudio,
+    extract,
+    _MockSpeech(),
   );
 
   const MuteVideoState picked = MuteVideoState(
@@ -525,5 +541,61 @@ void main() {
     act: (MuteVideoCubit cubit) => cubit.convertToAudio(),
     expect: () => <MuteVideoState>[],
     verify: (_) => verifyNever(() => convert(any())),
+  );
+
+  // Spec 006 S11: Save to Music, for changed sound files only.
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'save to music saves a converted sound file',
+    setUp: () => when(
+      () => saveAudio(audio),
+    ).thenAnswer((_) async => const DataSuccess<void>(null)),
+    build: build,
+    seed: () => MuteVideoState(
+      status: MuteVideoStatus.muted,
+      source: part,
+      original: original,
+      muted: audio,
+      applied: const <MediaOperation>{MediaOperation.convertToAudio},
+      lastInput: part,
+    ),
+    act: (MuteVideoCubit cubit) => cubit.saveToMusic(),
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.status, MuteVideoStatus.savedToMusic);
+      verify(() => saveAudio(audio)).called(1);
+    },
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'save to music does nothing for an untouched sound or a video',
+    build: build,
+    seed: () => const MuteVideoState(source: audio, original: audio),
+    act: (MuteVideoCubit cubit) async {
+      await cubit.saveToMusic();
+      cubit.emit(MuteVideoState(source: part, original: original));
+      await cubit.saveToMusic();
+    },
+    verify: (_) => verifyNever(() => saveAudio(any())),
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'a refused permission shows permissionDenied and keeps the file',
+    setUp: () => when(() => saveAudio(any())).thenAnswer(
+      (_) async => const DataFailed<void>(AppFailure.permissionDenied),
+    ),
+    build: build,
+    seed: () => const MuteVideoState(
+      status: MuteVideoStatus.muted,
+      source: original,
+      original: original,
+      muted: audio,
+      applied: <MediaOperation>{MediaOperation.convertToAudio},
+    ),
+    act: (MuteVideoCubit cubit) => cubit.saveToMusic(),
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.failure, AppFailure.permissionDenied);
+      expect(cubit.state.current, audio);
+      expect(cubit.state.isBusy, isFalse);
+    },
   );
 }

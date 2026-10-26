@@ -1,12 +1,14 @@
 # 006 Media Workspace: Image, Sound and Video
 
-**Version:** v2.4  
+**Version:** v2.6  
 **Status:** Draft. Coding follows [implementation_plan.md](implementation_plan.md), one step at a time. Q4, Q5, Q7 decided; Q6, Q8–Q10 use their defaults (§9). Nothing is blocked.  
 **App:** `~/StudioProjects/mute-music-app` (Flutter, Android + iOS)  
 **Builds on:** [001](../001-mute-video/spec.md) (Remove sound, Remove music, Save), [002](../002-music-removal-isolate/spec.md) (isolate, steps), [003](../003-choose-part/spec.md) (cut). **Replaces** the main-screen layout of 001 §4 and **removes** [005](../005-fewer-actions/spec.md) (More actions) once it ships.  
 **Last updated:** 2026-10-26
 
 ### Changelog
+- **v2.6 (2026-10-26):** Speech to text decided by the S14 spike: whisper.cpp (`whisper_cpp_flutter_plus`), multilingual `base` model with SHA-256, asked before the one-time download.
+- **v2.5 (2026-10-26):** OCR engine decided by the plan's S12 spike: Tesseract (bundled tessdata_fast, eng + ara) on Android, Apple Vision on iOS. Still offline, Arabic + English.
 - **v2.4 (2026-10-26):** Q12 resolved: after only a cut, all four actions plus Save to gallery.
 - **v2.3 (2026-10-26):** Answers to the manual_summery check: after Remove sound only Save to gallery; an operation is never offered again once it ran (A1); cut and actions work on any video or sound, input or output, and cut always starts from the first added file; Save to Music also for sound with the music removed; Text screen = edit then Copy; More actions (005) removed; three icons on the file (x, cut, original).
 - **v2.2 (2026-10-26):** Q4 decided (M4A, see F7). Q5 resolved (Files app on iOS). Q7 resolved: every feature works **offline**, in **Arabic and English**, for images, sound and video (F8).
@@ -121,8 +123,10 @@ Takes the audio track of the current video (or output) and writes an **M4A (AAC)
 
 ### F8 Extract text
 - **Offline only, Arabic and English** (Q7, resolved). No audio or image ever leaves the phone.
-- **Image** (OCR): **Tesseract** with the English and Arabic language data, the same engine on Android and iOS. (Google ML Kit's on-device recognizer has no Arabic, so it can't be the engine.) The language data (a few MB) is bundled with the app, or downloaded once like the AI model; the plan's spike decides.
-- **Sound or video** (speech to text): **Whisper** (whisper.cpp), multilingual model, run on the device. The model is downloaded **once** on first use, with progress, an exact size check and a SHA-256 check, like the separation model (001 §7). Model size (base ≈ 140 MB or small ≈ 460 MB) is chosen in the plan's spike by Arabic accuracy and speed on the SM-A515F. It runs in a background isolate with step progress, like 002. A length limit (default 5 min, cut first) applies, like Remove music.
+- **Image** (OCR), decided by the S12 spike:
+  - **Android:** **Tesseract** (Tesseract4Android) with the English and Arabic `tessdata_fast` data **bundled** in the APK (about 5.5 MB). Google ML Kit's on-device recognizer has no Arabic, so it can't be the engine.
+  - **iOS:** **Apple Vision**, built in and offline. It reads Arabic on current iOS (checked on iOS 26); on an older iOS without Arabic it reads English only. Tesseract on iOS was dropped: the Flutter plugin hangs when recognition returns nothing, and copies its data into Documents, which the Files app now shows (F10).
+- **Sound or video** (speech to text), decided by the S14 spike: **whisper.cpp** through `whisper_cpp_flutter_plus` (no FFmpeg, inference off the UI thread), multilingual **`base`** model (about 148 MB; `tiny` reads Arabic poorly, `small` is not in the pinned catalog). The model is downloaded **once**, from a pinned revision, resumable, with its **SHA-256 checked**; a file that fails the check is deleted and downloaded again. **Before the first download the app asks** ("Download the speech model? … about 148 MB. Wi-Fi is recommended."); saying no changes nothing. The sound is taken with the existing native extract (called, not changed), turned into 16 kHz mono in a background isolate, then read with the language detected automatically. Progress shows while downloading and while listening. A length limit (5 min, cut first) applies, like Remove music. The plugin's microphone permission is removed from the Android manifest: the app never records.
 - Language: detected automatically, with an Arabic / English choice on the Text screen to run again if detection is wrong.
 - On success, opens the Text screen (§5). No text found → `noTextFound` message, stay on the screen.
 
@@ -185,7 +189,7 @@ Saves the audio output to the phone's music storage. Android: the shared `Music/
 | Q3 | Same playback position on the original screen? | **Resolved:** yes |
 | Q4 | MP3 or M4A, packages or native? | **Decided (delegated):** M4A (AAC) with native code, no new package (F7) |
 | Q5 | Save to Music on iOS? | **Resolved:** the Files app (On My iPhone › Mute Video) |
-| Q6 | Text from images: languages and engine? | **Resolved with Q7:** Arabic + English, offline, Tesseract |
+| Q6 | Text from images: languages and engine? | **Resolved:** Arabic + English, offline; Tesseract on Android, Apple Vision on iOS (S12 spike) |
 | Q7 | Offline or online, which languages? | **Resolved:** everything offline, Arabic and English (images, sound, video). Whisper on device |
 | Q8 | After an edit, do the next actions run on the output or on the part before the edit? | **Resolved:** the current output |
 | Q9 | After an edit, should Remove sound still be offered? | **Resolved:** after Remove sound only Save to gallery; after Remove music no (A1); after only a cut see Q12 |

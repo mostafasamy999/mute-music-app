@@ -11,14 +11,23 @@ import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/extract_text_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/pick_media_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/save_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/speech_model_use_case.dart';
 
 class _MockPick extends Mock implements PickMediaUseCase {}
 
 class _MockConvert extends Mock implements ConvertToAudioUseCase {}
+
+class _MockSaveAudio extends Mock implements SaveAudioUseCase {}
+
+class _MockExtract extends Mock implements ExtractTextUseCase {}
+
+class _MockSpeech extends Mock implements SpeechModelUseCase {}
 
 class _MockMute extends Mock implements MuteVideoUseCase {}
 
@@ -64,6 +73,9 @@ void main() {
     discard,
     _MockCut(),
     _MockConvert(),
+    _MockSaveAudio(),
+    _MockExtract(),
+    _MockSpeech(),
   );
 
   Matcher failedWith(AppFailure failure) => isA<MuteVideoState>()

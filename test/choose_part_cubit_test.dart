@@ -292,4 +292,104 @@ void main() {
     act: (MuteVideoCubit cubit) => cubit.removeSound(),
     verify: (MuteVideoCubit cubit) => expect(cubit.state.muted, result),
   );
+
+  // Spec 006 S2: the original, the part and the result are separate files.
+  // Later features (View original, compare) rely on these rules.
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'pick, part, then remove sound keeps all three files apart',
+    setUp: () {
+      when(
+        () => pick(),
+      ).thenAnswer((_) async => const DataSuccess<VideoAsset?>(original));
+      when(
+        () => cut(original, asked),
+      ).thenAnswer((_) async => DataSuccess<VideoAsset>(part));
+      when(
+        () => mute(part),
+      ).thenAnswer((_) async => const DataSuccess<VideoAsset>(result));
+    },
+    build: build,
+    act: (MuteVideoCubit cubit) async {
+      await cubit.pickVideo();
+      await cubit.usePart(asked);
+      await cubit.removeSound();
+    },
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.original, original);
+      expect(cubit.state.source, part);
+      expect(cubit.state.muted, result);
+      verifyNever(() => discard(any()));
+    },
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'a failed cut keeps the current part and result, and deletes nothing',
+    setUp: () => when(() => cut(original, asked)).thenAnswer(
+      (_) async => const DataFailed<VideoAsset>(AppFailure.cutFailed),
+    ),
+    build: build,
+    seed: () => MuteVideoState(
+      status: MuteVideoStatus.muted,
+      source: part,
+      original: original,
+      muted: result,
+    ),
+    act: (MuteVideoCubit cubit) => cubit.usePart(asked),
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.source, part);
+      expect(cubit.state.original, original);
+      expect(cubit.state.muted, result);
+      expect(cubit.state.isBusy, isFalse);
+      verifyNever(() => discard(any()));
+    },
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'a second result on a part deletes only the first result',
+    setUp: () {
+      when(
+        () => ensureModel(onProgress: any(named: 'onProgress')),
+      ).thenAnswer((_) async => const DataSuccess<void>(null));
+      when(
+        () => removeMusic(part, onProgress: any(named: 'onProgress')),
+      ).thenAnswer(
+        (_) async =>
+            const DataSuccess<VideoAsset>(VideoAsset(path: '/tmp/second.mp4')),
+      );
+    },
+    build: build,
+    seed: () => MuteVideoState(
+      status: MuteVideoStatus.muted,
+      source: part,
+      original: original,
+      muted: result,
+    ),
+    act: (MuteVideoCubit cubit) => cubit.removeMusic(),
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.muted, const VideoAsset(path: '/tmp/second.mp4'));
+      expect(cubit.state.source, part);
+      expect(cubit.state.original, original);
+      verify(() => discard(result)).called(1);
+      verifyNever(() => discard(part));
+      verifyNever(() => discard(original));
+    },
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'the old part is deleted only after the new part is ready',
+    setUp: () => when(
+      () => cut(original, asked),
+    ).thenAnswer((_) async => DataSuccess<VideoAsset>(part)),
+    build: build,
+    seed: () => const MuteVideoState(
+      source: VideoAsset(path: '/tmp/part_0.mp4'),
+      original: original,
+    ),
+    act: (MuteVideoCubit cubit) => cubit.usePart(asked),
+    verify: (_) => verifyInOrder(<void Function()>[
+      () => cut(original, asked),
+      () => discard(const VideoAsset(path: '/tmp/part_0.mp4')),
+    ]),
+  );
 }

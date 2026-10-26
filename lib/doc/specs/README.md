@@ -13,7 +13,7 @@ Spec-driven development (SDD) specs for `mute-music-app`. The same workflow as `
 | [003](003-choose-part/spec.md) | Choose a part (cut without re-encoding) | Implemented (v1.1) | P1–P4 confirm; T6 device check (scenarios A–C, 20-min clip, Arabic) |
 | [004](004-app-language/spec.md) | In-app language (Phone / English / العربية) | Implemented | T5 device check |
 | [005](005-fewer-actions/spec.md) | Fewer actions on the main screen | Implemented | T3 device check |
-| [006](006-media-workspace/spec.md) | Media workspace: image, sound and video; Convert to audio (M4A); Extract text; Save to Music; View original | Draft v2.2. [Plan](006-media-workspace/implementation_plan.md): S1 done | Q8–Q10 (defaults used); nothing blocked |
+| [006](006-media-workspace/spec.md) | Media workspace: image, sound and video; Convert to audio (M4A); Extract text; Save to Music; View original | Draft v2.4. [Plan](006-media-workspace/implementation_plan.md): S1–S2 done | Q10 (default used); nothing blocked |
 
 **Next:** [ROADMAP.md](ROADMAP.md) (new features, in order) and [001 NEXT.md](001-mute-video/NEXT.md) (where to pick up).
 

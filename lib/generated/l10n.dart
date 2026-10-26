@@ -498,6 +498,91 @@ class S {
   String get labelImage {
     return Intl.message('Image', name: 'labelImage', desc: '', args: []);
   }
+
+  /// `Original · {length}`
+  String chooseOriginal(String length) {
+    return Intl.message(
+      'Original · $length',
+      name: 'chooseOriginal',
+      desc: '',
+      args: [length],
+    );
+  }
+
+  /// `Full length`
+  String get chooseFullLength {
+    return Intl.message(
+      'Full length',
+      name: 'chooseFullLength',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show the file before this change`
+  String get showOriginal {
+    return Intl.message(
+      'Show the file before this change',
+      name: 'showOriginal',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Before the last change`
+  String get originalTitle {
+    return Intl.message(
+      'Before the last change',
+      name: 'originalTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Audio (M4A)`
+  String get labelAudio {
+    return Intl.message('Audio (M4A)', name: 'labelAudio', desc: '', args: []);
+  }
+
+  /// `Convert to audio`
+  String get convertToAudio {
+    return Intl.message(
+      'Convert to audio',
+      name: 'convertToAudio',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Making the audio file...`
+  String get converting {
+    return Intl.message(
+      'Making the audio file...',
+      name: 'converting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The audio file is ready.`
+  String get audioReady {
+    return Intl.message(
+      'The audio file is ready.',
+      name: 'audioReady',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not make an audio file from this video.`
+  String get errorConvertFailed {
+    return Intl.message(
+      'Could not make an audio file from this video.',
+      name: 'errorConvertFailed',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

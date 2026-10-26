@@ -1,28 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
 import 'package:mute_music_app/src/core/extensions/duration_extensions.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/original_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/player_host.dart';
 import 'package:video_player/video_player.dart';
 
 /// Plays a local sound file: play/pause, a seek bar and the time
 /// (spec 006 §2.2).
 class AudioPreview extends StatelessWidget {
-  const AudioPreview({required this.path, super.key});
+  const AudioPreview({
+    required this.path,
+    this.startAt = Duration.zero,
+    this.onOriginal,
+    super.key,
+  });
 
   final String path;
+  final Duration startAt;
+
+  /// When set, shows the original icon (spec 006 §3.2).
+  final ValueChanged<Duration>? onOriginal;
 
   @override
   Widget build(BuildContext context) => PlayerHost(
     path: path,
+    startAt: startAt,
     builder: (VideoPlayerController controller) =>
-        _AudioControls(controller: controller),
+        _AudioControls(controller: controller, onOriginal: onOriginal),
   );
 }
 
 class _AudioControls extends StatelessWidget {
-  const _AudioControls({required this.controller});
+  const _AudioControls({required this.controller, this.onOriginal});
 
   final VideoPlayerController controller;
+  final ValueChanged<Duration>? onOriginal;
 
   @override
   Widget build(BuildContext context) {
@@ -74,11 +86,24 @@ class _AudioControls extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                IconButton.filled(
-                  iconSize: 40,
-                  onPressed: () =>
-                      value.isPlaying ? controller.pause() : controller.play(),
-                  icon: Icon(value.isPlaying ? Icons.pause : Icons.play_arrow),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    if (onOriginal
+                        case final ValueChanged<Duration> open) ...<Widget>[
+                      OriginalButton(controller: controller, onOriginal: open),
+                      const SizedBox(width: AppSpacing.md),
+                    ],
+                    IconButton.filled(
+                      iconSize: 40,
+                      onPressed: () => value.isPlaying
+                          ? controller.pause()
+                          : controller.play(),
+                      icon: Icon(
+                        value.isPlaying ? Icons.pause : Icons.play_arrow,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

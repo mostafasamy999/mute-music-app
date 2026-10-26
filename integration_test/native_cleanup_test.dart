@@ -161,6 +161,7 @@ void main() {
         injector(),
         injector(),
         injector(),
+        injector(),
       );
       // Stand-ins for the copies image_picker makes in the cache.
       final File first = clip.copySync('${cache.path}/picked_1.mp4');
@@ -174,7 +175,9 @@ void main() {
       final String secondResult = cubit.state.muted!.path;
 
       expect(cubit.state.status, MuteVideoStatus.muted);
-      expect(File(firstResult).existsSync(), isFalse);
+      // Spec 006 §3.2: the second run works on the first result, which stays
+      // as the file before the last operation until the next change.
+      expect(File(firstResult).existsSync(), isTrue);
       expect(File(secondResult).existsSync(), isTrue);
 
       pick.queue.add(VideoAsset(path: second.path));
@@ -188,6 +191,7 @@ void main() {
       final _QueuedPick pick = _QueuedPick();
       final MuteVideoCubit cubit = MuteVideoCubit(
         pick,
+        injector(),
         injector(),
         injector(),
         injector(),

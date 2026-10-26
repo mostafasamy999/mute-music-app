@@ -14,6 +14,9 @@ abstract interface class VideoRepository {
   /// to start on a keyframe).
   Future<DataState<VideoAsset>> cut(VideoAsset original, ClipRange range);
 
+  /// Writes the audio of [video] into a new .m4a sound file (spec 006 F7).
+  Future<DataState<MediaAsset>> convertToAudio(MediaAsset video);
+
   Future<DataState<void>> saveToGallery(VideoAsset video);
 
   /// Frees a file the app made and no longer shows. Best effort: never throws,

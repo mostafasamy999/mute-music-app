@@ -19,5 +19,6 @@ extension AppFailureX on AppFailure {
     AppFailure.tooLongForMusic =>
       S.of(context).errorTooLongChoosePart(ClipLimits.maxMusicDuration.clock),
     AppFailure.languageSaveFailed => S.of(context).errorLanguageSave,
+    AppFailure.convertFailed => S.of(context).errorConvertFailed,
   };
 }

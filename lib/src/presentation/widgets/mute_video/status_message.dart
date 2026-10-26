@@ -12,6 +12,7 @@ typedef _Data = ({
   bool musicOnly,
   bool showsProgress,
   bool showsSteps,
+  bool converted,
 });
 
 class StatusMessage extends StatelessWidget {
@@ -26,6 +27,7 @@ class StatusMessage extends StatelessWidget {
           musicOnly: state.musicOnly,
           showsProgress: state.showsProgress,
           showsSteps: state.showsSteps,
+          converted: state.applied.contains(MediaOperation.convertToAudio),
         ),
         builder: _builder,
       );
@@ -50,9 +52,11 @@ class StatusMessage extends StatelessWidget {
   String? _text(BuildContext context, _Data data) => switch (data.status) {
     MuteVideoStatus.cutting => S.of(context).cutting,
     MuteVideoStatus.muting => S.of(context).working,
+    MuteVideoStatus.converting => S.of(context).converting,
     MuteVideoStatus.preparingModel => S.of(context).downloadingModel,
     MuteVideoStatus.removingMusic => _percent(context, data.progress),
     MuteVideoStatus.saving => S.of(context).saving,
+    MuteVideoStatus.muted when data.converted => S.of(context).audioReady,
     MuteVideoStatus.muted =>
       data.musicOnly
           ? S.of(context).readyToSaveMusic

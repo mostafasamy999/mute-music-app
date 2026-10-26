@@ -50,5 +50,14 @@
   "addSound": "صوت",
   "addVideo": "فيديو",
   "clearFile": "إزالة هذا الملف",
-  "labelImage": "صورة"
+  "labelImage": "صورة",
+  "chooseOriginal": "الأصلي · {length}",
+  "chooseFullLength": "الطول الكامل",
+  "showOriginal": "اعرض الملف قبل هذا التغيير",
+  "originalTitle": "قبل آخر تغيير",
+  "labelAudio": "صوت (M4A)",
+  "convertToAudio": "تحويل إلى صوت",
+  "converting": "جارٍ إنشاء ملف الصوت...",
+  "audioReady": "ملف الصوت جاهز.",
+  "errorConvertFailed": "تعذّر إنشاء ملف صوت من هذا الفيديو."
 }

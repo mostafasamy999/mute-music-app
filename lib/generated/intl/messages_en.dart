@@ -20,23 +20,25 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(limit) =>
+  static String m0(length) => "Original · ${length}";
+
+  static String m1(limit) =>
       "This video is too long for Remove music. Choose a part up to ${limit} first.";
 
-  static String m1(time) => "End ${time}";
+  static String m2(time) => "End ${time}";
 
-  static String m2(start, end) => "Part ${start}–${end}";
+  static String m3(start, end) => "Part ${start}–${end}";
 
-  static String m3(time) => "Length ${time}";
+  static String m4(time) => "Length ${time}";
 
-  static String m4(time) => "Start ${time}";
+  static String m5(time) => "Start ${time}";
 
-  static String m5(limit) =>
+  static String m6(limit) =>
       "Remove music works on parts up to ${limit}. Remove sound works on any length.";
 
-  static String m6(current, total) => "Part ${current} of ${total}";
+  static String m7(current, total) => "Part ${current} of ${total}";
 
-  static String m7(percent) => "${percent}%";
+  static String m8(percent) => "${percent}%";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -48,12 +50,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "addSound": MessageLookupByLibrary.simpleMessage("Sound"),
     "addVideo": MessageLookupByLibrary.simpleMessage("Video"),
     "appTitle": MessageLookupByLibrary.simpleMessage("Mute Video"),
+    "audioReady": MessageLookupByLibrary.simpleMessage(
+      "The audio file is ready.",
+    ),
+    "chooseFullLength": MessageLookupByLibrary.simpleMessage("Full length"),
+    "chooseOriginal": m0,
     "choosePart": MessageLookupByLibrary.simpleMessage("Choose a part"),
     "choosePartTitle": MessageLookupByLibrary.simpleMessage("Choose a part"),
     "clearFile": MessageLookupByLibrary.simpleMessage("Clear this file"),
+    "convertToAudio": MessageLookupByLibrary.simpleMessage("Convert to audio"),
+    "converting": MessageLookupByLibrary.simpleMessage(
+      "Making the audio file...",
+    ),
     "cutting": MessageLookupByLibrary.simpleMessage("Cutting the part..."),
     "downloadingModel": MessageLookupByLibrary.simpleMessage(
       "Getting ready, one time only...",
+    ),
+    "errorConvertFailed": MessageLookupByLibrary.simpleMessage(
+      "Could not make an audio file from this video.",
     ),
     "errorCutFailed": MessageLookupByLibrary.simpleMessage(
       "Could not cut that part of the video.",
@@ -88,18 +102,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorSaveFailed": MessageLookupByLibrary.simpleMessage(
       "Could not save the video.",
     ),
-    "errorTooLongChoosePart": m0,
+    "errorTooLongChoosePart": m1,
+    "labelAudio": MessageLookupByLibrary.simpleMessage("Audio (M4A)"),
     "labelImage": MessageLookupByLibrary.simpleMessage("Image"),
     "labelMuted": MessageLookupByLibrary.simpleMessage("No sound"),
     "labelNoMusic": MessageLookupByLibrary.simpleMessage("No music"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("Original"),
     "language": MessageLookupByLibrary.simpleMessage("Language"),
     "languageSystem": MessageLookupByLibrary.simpleMessage("Phone language"),
-    "partEnd": m1,
-    "partLabel": m2,
-    "partLength": m3,
-    "partStart": m4,
-    "partTooLongForMusic": m5,
+    "originalTitle": MessageLookupByLibrary.simpleMessage(
+      "Before the last change",
+    ),
+    "partEnd": m2,
+    "partLabel": m3,
+    "partLength": m4,
+    "partStart": m5,
+    "partTooLongForMusic": m6,
     "previewUnavailable": MessageLookupByLibrary.simpleMessage(
       "This file can\'t be played. It may have been moved or deleted.",
     ),
@@ -119,11 +137,14 @@ class MessageLookup extends MessageLookupByLibrary {
       "Saved to your gallery",
     ),
     "saving": MessageLookupByLibrary.simpleMessage("Saving..."),
+    "showOriginal": MessageLookupByLibrary.simpleMessage(
+      "Show the file before this change",
+    ),
     "stepBuild": MessageLookupByLibrary.simpleMessage("Build the video"),
     "stepExtract": MessageLookupByLibrary.simpleMessage("Read the audio"),
     "stepModel": MessageLookupByLibrary.simpleMessage("Get the AI model"),
-    "stepPart": m6,
-    "stepPercent": m7,
+    "stepPart": m7,
+    "stepPercent": m8,
     "stepSeparate": MessageLookupByLibrary.simpleMessage("Separate the voices"),
     "usePart": MessageLookupByLibrary.simpleMessage("Use this part"),
     "working": MessageLookupByLibrary.simpleMessage("Removing sound..."),

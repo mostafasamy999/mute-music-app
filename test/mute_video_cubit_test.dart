@@ -8,6 +8,7 @@ import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
+import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/mute_video_use_case.dart';
@@ -16,6 +17,8 @@ import 'package:mute_music_app/src/domain/use_cases/remove_music_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/save_video_use_case.dart';
 
 class _MockPick extends Mock implements PickMediaUseCase {}
+
+class _MockConvert extends Mock implements ConvertToAudioUseCase {}
 
 class _MockMute extends Mock implements MuteVideoUseCase {}
 
@@ -60,6 +63,7 @@ void main() {
     removeMusic,
     discard,
     _MockCut(),
+    _MockConvert(),
   );
 
   Matcher failedWith(AppFailure failure) => isA<MuteVideoState>()
@@ -291,20 +295,24 @@ void main() {
   );
 
   blocTest<MuteVideoCubit, MuteVideoState>(
-    'a new result discards the one it replaces, never the source',
+    'a new result runs on the result, keeps it as the file before, and '
+    'deletes the older one (spec 006 Q8, §3.2)',
     setUp: () => when(
-      () => mute(source),
+      () => mute(result),
     ).thenAnswer((_) async => const DataSuccess<VideoAsset>(next)),
     build: build,
     seed: () => const MuteVideoState(
       status: MuteVideoStatus.muted,
       source: source,
       muted: result,
+      lastInput: VideoAsset(path: '/tmp/older.mp4'),
     ),
     act: (MuteVideoCubit cubit) => cubit.removeSound(),
     verify: (MuteVideoCubit cubit) {
       expect(cubit.state.muted, next);
-      verify(() => discard(result)).called(1);
+      expect(cubit.state.lastInput, result);
+      verify(() => discard(const VideoAsset(path: '/tmp/older.mp4'))).called(1);
+      verifyNever(() => discard(result));
       verifyNever(() => discard(source));
     },
   );

@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mute_music_app/generated/l10n.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
 import 'package:mute_music_app/src/core/constants/clip_limits.dart';
+import 'package:mute_music_app/src/core/extensions/duration_extensions.dart';
 import 'package:mute_music_app/src/domain/entities/clip_range.dart';
+import 'package:mute_music_app/src/domain/entities/media_asset.dart';
 import 'package:mute_music_app/src/presentation/widgets/choose_part/part_length_hint.dart';
 import 'package:mute_music_app/src/presentation/widgets/choose_part/part_preview.dart';
 import 'package:mute_music_app/src/presentation/widgets/choose_part/part_range_slider.dart';
@@ -13,10 +16,17 @@ import 'package:video_player/video_player.dart';
 
 /// What the Choose a part screen opens with.
 class ChoosePartArgs {
-  const ChoosePartArgs({required this.path, this.initial});
+  const ChoosePartArgs({
+    required this.path,
+    this.kind = MediaKind.video,
+    this.initial,
+  });
 
-  /// The original video. A part is always cut from the original.
+  /// The original file. A part is always cut from the original.
   final String path;
+
+  /// A video or a sound (spec 006 F3).
+  final MediaKind kind;
 
   /// The last range used on this original, if any.
   final ClipRange? initial;
@@ -120,6 +130,15 @@ class _ChoosePartScreenState extends State<ChoosePartScreen> {
       ..seekTo(startMoved ? next.start : next.end);
   }
 
+  /// Resets both handles to the whole original (spec 006 T2).
+  void _useFullLength() {
+    final VideoPlayerController? controller = _controller.value;
+    if (controller == null) return;
+    _onRangeChanged(
+      ClipRange(start: Duration.zero, end: controller.value.duration),
+    );
+  }
+
   void _submit() => Navigator.of(context).pop(_range.value);
 
   @override
@@ -139,10 +158,16 @@ class _ChoosePartScreenState extends State<ChoosePartScreen> {
                           controller: controller,
                           failed: _failed,
                           onTap: _togglePlay,
+                          isAudio: widget.args.kind == MediaKind.audio,
                         ),
                       ),
                       if (controller != null) ...<Widget>[
                         const SizedBox(height: AppSpacing.md),
+                        _OriginalHeader(
+                          range: _range,
+                          duration: controller.value.duration,
+                          onFullLength: _useFullLength,
+                        ),
                         PartRangeSlider(
                           range: _range,
                           duration: controller.value.duration,
@@ -162,5 +187,44 @@ class _ChoosePartScreenState extends State<ChoosePartScreen> {
         ),
       ),
     ),
+  );
+}
+
+/// Says the screen shows the original, never the current part, and offers a
+/// one-tap reset to its full length (spec 006 T1, T2).
+class _OriginalHeader extends StatelessWidget {
+  const _OriginalHeader({
+    required this.range,
+    required this.duration,
+    required this.onFullLength,
+  });
+
+  final ValueListenable<ClipRange> range;
+  final Duration duration;
+  final VoidCallback onFullLength;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<ClipRange>(
+    valueListenable: range,
+    builder: (BuildContext context, ClipRange current, _) {
+      final bool isFull =
+          current.start == Duration.zero && current.end >= duration;
+      return Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              S.of(context).chooseOriginal(duration.clock),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+          ),
+          if (!isFull)
+            TextButton.icon(
+              onPressed: onFullLength,
+              icon: const Icon(Icons.open_in_full),
+              label: Text(S.of(context).chooseFullLength),
+            ),
+        ],
+      );
+    },
   );
 }

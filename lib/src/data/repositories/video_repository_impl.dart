@@ -70,28 +70,61 @@ class VideoRepositoryImpl implements VideoRepository {
     ClipRange range,
   ) async {
     try {
-      final ({String path, int startMs, int endMs}) part = await _datasource
-          .cutVideo(
-            original.path,
-            startMs: range.start.inMilliseconds,
-            endMs: range.end.inMilliseconds,
-          );
+      // A sound file gets its own native cut into an .m4a (spec 006 F3).
+      final ({String path, int startMs, int endMs}) part = original.isAudio
+          ? await _datasource.cutAudio(
+              original.path,
+              startMs: range.start.inMilliseconds,
+              endMs: range.end.inMilliseconds,
+            )
+          : await _datasource.cutVideo(
+              original.path,
+              startMs: range.start.inMilliseconds,
+              endMs: range.end.inMilliseconds,
+            );
       final ClipRange real = ClipRange(
         start: Duration(milliseconds: part.startMs),
         end: Duration(milliseconds: part.endMs),
       );
       return DataSuccess<VideoAsset>(
-        _toAsset(part.path, duration: real.length, range: real),
+        _toAsset(
+          part.path,
+          kind: original.kind,
+          duration: real.length,
+          range: real,
+        ),
       );
     } on PlatformException catch (error) {
-      return DataFailed<VideoAsset>(
-        error.code == 'no_video_track'
-            ? AppFailure.noVideoTrack
-            : AppFailure.cutFailed,
-      );
+      return DataFailed<VideoAsset>(switch (error.code) {
+        'no_video_track' => AppFailure.noVideoTrack,
+        'no_audio_track' => AppFailure.noAudioTrack,
+        _ => AppFailure.cutFailed,
+      });
     } on Object {
       // Includes a native range the ClipRange rejects.
       return const DataFailed<VideoAsset>(AppFailure.cutFailed);
+    }
+  }
+
+  @override
+  Future<DataState<MediaAsset>> convertToAudio(MediaAsset video) async {
+    try {
+      final String path = await _datasource.exportAudio(video.path);
+      return DataSuccess<MediaAsset>(
+        _toAsset(
+          path,
+          kind: MediaKind.audio,
+          duration: await _durationOf(path),
+        ),
+      );
+    } on PlatformException catch (error) {
+      return DataFailed<MediaAsset>(
+        error.code == 'no_audio_track'
+            ? AppFailure.noAudioTrack
+            : AppFailure.convertFailed,
+      );
+    } on Object {
+      return const DataFailed<MediaAsset>(AppFailure.convertFailed);
     }
   }
 

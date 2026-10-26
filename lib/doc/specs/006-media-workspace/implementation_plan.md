@@ -34,9 +34,9 @@ Status: `[x]` Completed · `[ ]` Pending, In Progress or Blocked (the note says 
 - [x] **S5** Empty screen with the add widget, add sheet, Clear (x) (W1–W3)
 - [x] **S6** Image and audio previews (§2.2)
 - [x] **S7** Actions per file type and after edits (W4). *Replaced the 005 layout*
-- [ ] **S8** Cut icon (video, then sound); original label and Full video (W5). *Sound cut needs a new native method*
-- [ ] **S9** View original screen (W6)
-- [ ] **S10** Convert to audio: M4A, native (F7, W7)
+- [x] **S8** Cut icon (video, then sound); original label and Full video (W5). *Device check of the sound cut left for S15*
+- [x] **S9** View original screen (W6)
+- [x] **S10** Convert to audio: M4A, native (F7, W7). *Android device check left for S15*
 - [ ] **S11** Save to Music: Android Music folder, iOS Files app (F10, W7)
 - [ ] **S12** Extract text from an image (Tesseract, AR+EN) + Text screen (F8, §5, W8). *Starts with a spike*
 - [ ] **S13** Remove music only on a sound file (F6). *Needs approval: new native methods next to `AudioPipeline`*
@@ -295,90 +295,124 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 ## S8 Cut icon; original label and Full video
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26), except the on-device checks  
 **Goal:** W5 and the re-trim items from spec v1.0 (T1, T2). Cut always uses the first added file.  
 **Dependencies:** S7  
-**Files likely to change:** `video_preview_panel.dart` (cut icon over the file), `choose_part_button.dart` (entry moves), `screens/choose_part_screen.dart` (Original label, Full video button), ARB, `test/choose_part_widgets_test.dart`; for sound, new native `cutAudio`
+**Files changed:**
+- New native: `android/.../AudioExporter.kt`, `ios/Runner/AudioExporter.swift` (also used by S10), registered in `ios/Runner.xcodeproj/project.pbxproj`; new `cutAudio` cases in `MainActivity.kt` and `AppDelegate.swift`
+- `data/local/video_mute_datasource.dart` (`cutAudio`, shared `_rangeCall`), `data/repositories/video_repository_impl.dart` (sound → `cutAudio`, part keeps the kind, `no_audio_track` → `noAudioTrack`)
+- `screens/choose_part_screen.dart` (`ChoosePartArgs.kind`, `_OriginalHeader`: "Original · m:ss" + Full length), `widgets/choose_part/part_preview.dart` (sound mode), `widgets/mute_video/cut_file_button.dart` (video and sound)
+- ARB + generated l10n (`chooseOriginal`, `chooseFullLength`)
+- `ios/Podfile.lock` (pods for `file_picker` from S5, written by the first iOS build)
+- Tests: new `test/cut_original_test.dart`, `video_repository_impl_test.dart` (+2)
 
 **Tasks**
-- [ ] Cut icon over every video and sound (input or output) *(videos done early in S7; sound left)*
-- [ ] The cut screen says it shows the Original
-- [ ] Full video button resets both handles
-- [ ] Sound: new native `cutAudio` (Android `MediaExtractor`+`MediaMuxer` copy, iOS passthrough export to `.m4a`). New methods only
-- [ ] Sound: audio player on the cut screen
+- [x] Cut icon over every video and sound (input or output) *(videos in S7, sounds now; never images)*
+- [x] The cut screen says it shows the Original *("Original · 0:05")*
+- [x] Full video button resets both handles *(named **Full length**, since it also serves sound files; shown only when the range isn't already the whole file)*
+- [x] Sound: new native `cutAudio`. New methods only *(Android: AAC is copied with `MediaExtractor`+`MediaMuxer`, any other codec is re-encoded to AAC with `MediaCodec`; iOS: `AVAssetExportSession` AppleM4A with a time range. Output `part_<time>.m4a`, so the existing `part_` cleanup covers it)*
+- [x] Sound: audio player on the cut screen *(sound mark + play/pause; the slider and labels are shared)*
 
 **Acceptance**
-- [ ] The cut always uses the first added file (Q14)
-- [ ] Use this part with the full range goes back to the original (existing cubit path)
+- [x] The cut always uses the first added file (Q14) *(`openChoosePart` passes the original; unchanged cubit path)*
+- [x] Use this part with the full range goes back to the original (existing cubit path) *(widget test: Full length → Use this part pops 0–full)*
 
 **Tests**
-- [ ] `test/choose_part_widgets_test.dart` updated
-- [ ] Integration test for `cutAudio` on a device
+- [x] `test/cut_original_test.dart` (3): Original label, Full length reset and result, sound mode
+- [x] Repository: a sound is cut into a sound part; `no_audio_track` maps to `noAudioTrack` (2)
+- [x] Integration test for `cutAudio` on a device *(iOS simulator, with S10: see S10 Tests)*
+- [ ] The same on Android *(no emulator on this Mac: S15)*
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests: 148 pass (143 → 148)
+- [x] `git diff --stat` reviewed, no VIP diff *(AudioPipeline, VideoMuter, SampleCopier, VideoCutter unchanged on both platforms)*
+- [x] Native builds: `flutter build apk --debug` and `flutter build ios --simulator --debug` both succeed *(first Android build failed: `NoAudioTrackException` already exists in `AudioPipeline.kt`; reused it instead)*
+
+**Risks:** the Android re-encode path (MP3 and other non-AAC sound files) is compile-checked only; it needs a device run with an MP3 (S15).
 
 ---
 
 ## S9 View original screen
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26), except the on-device check  
 **Goal:** W6.  
 **Dependencies:** S3, S6, S8  
-**Files likely to change:** new route `/original` + `screens/original_screen.dart`, the original icon on edited files, state field `lastInput`, ARB, tests
+**Files changed:**
+- `bloc/mute_video/mute_video_state.dart`: stored `applied` and `lastInput`; `withPart` and new `withResult` set them; `MediaOperation.convertToAudio` (for S10)
+- `bloc/mute_video/mute_video_cubit.dart`: jobs run on `current` (Q8); results go through `withResult`; one cleanup rule (`_moveTo`): after any change, delete each file the old state used and the new one doesn't
+- New: `screens/original_screen.dart` (+ `OriginalArgs`), `widgets/mute_video/original_button.dart`; route `Routes.original`
+- `player_host.dart` (`startAt`), `video_preview.dart` / `audio_preview.dart` (`startAt`, `onOriginal`), `video_preview_panel.dart` (icon only when the file before exists; *Audio (M4A)* label for S10)
+- ARB + generated l10n (`showOriginal`, `originalTitle`, `labelAudio`)
+- Tests: new `test/original_view_test.dart`; `add_media_test.dart` (+1); updated to the new rules: `mute_video_actions_test.dart` (states now pass `applied`), `mute_video_cubit_test.dart` and `choose_part_cubit_test.dart` (a result made from a result keeps it as the file before)
 
 **Tasks**
-- [ ] State field `lastInput`: the file before the last operation (Q1), kept until the next operation or Clear
-- [ ] Original icon on every edited file
-- [ ] View-only original screen with a video or audio player
-- [ ] Start at the same playback position (Q3)
-- [ ] Pause the edited preview before opening the screen
+- [x] State field `lastInput`: the file before the last operation (Q1), kept until the next operation or Clear
+- [x] Original icon on every edited file *(video: over the picture; sound: next to play)*
+- [x] View-only original screen with a video or audio player
+- [x] Start at the same playback position (Q3)
+- [x] Pause the edited preview before opening the screen
 
 **Acceptance**
-- [ ] Spec AC7
-- [ ] The icon hides when the original file is gone
+- [x] Spec AC7 *(widget test: icon → original screen with the file before)*
+- [x] The icon hides when the original file is gone
 
 **Tests**
-- [ ] State tests for `lastInput`
-- [ ] Widget tests for the icon and the screen
+- [x] State tests for `lastInput` (4): part, whole file again, result, new cut resets `applied`
+- [x] Widget tests for the icon and the screen (4): opens the file before, no icon on the untouched file, no icon when the file is gone, original screen seeks to the handed-over moment
+- [x] Cubit: Clear deletes the file before too (1)
+- [x] Full suite: 157 pass (148 → 157)
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests
+- [x] `git diff --stat` reviewed, no VIP diff
 
-**Risks:** two players alive at once.
+**Notes:**
+- Behavior change on purpose (spec Q8): an operation now runs on the latest result, not on the part under it. With rule A1 this changes nothing for Remove sound / Remove music on video today; it is what lets Convert to audio (S10) work on a music-removed video.
+- The S7 note "`applied` derived from the result" no longer holds: it is stored now.
+- Not checked on a device yet (S15).
+
+**Risks:** two players alive at once. Handled: the edited preview pauses before the screen opens; both are disposed normally.
 
 ---
 
 ## S10 Convert to audio (M4A)
 
-**Status:** Pending  
+**Status:** Completed (2026-10-26), except the Android device check  
 **Goal:** F7 (decision: M4A, native, no package).  
-**Files likely to change:** new `AudioExporter.kt` / `AudioExporter.swift` + a new `exportAudio` method on the existing channel, `VideoMuteDatasource`, new `AudioRepository` (or a method on `VideoRepository`), `ConvertToAudioUseCase`, cubit action, `TempFilesDatasource` prefix `export_`, ARB, tests, `integration_test/audio_export_test.dart`
+**Files changed:**
+- Native: `exportAudio` cases in `MainActivity.kt` and `AppDelegate.swift`, both using the S8 `AudioExporter` on the whole file (`export_<time>.m4a`)
+- `data/local/video_mute_datasource.dart` (`exportAudio`), `data/local/temp_files_datasource.dart` (`export_` leftovers), `domain/repositories/video_repository.dart` + `data/repositories/video_repository_impl.dart` (`convertToAudio`), new `domain/use_cases/convert_to_audio_use_case.dart`, `core/resources/app_failure.dart` + `core/extensions/failure_extensions.dart` (`convertFailed`), `core/di/injector.dart`
+- `bloc/mute_video/mute_video_state.dart` (`converting` status, busy), `mute_video_cubit.dart` (`convertToAudio` on the current video; 8th use case)
+- New `widgets/mute_video/convert_to_audio_button.dart`; `mute_video_actions.dart` (built), `status_message.dart` (converting / audio ready), `screens/mute_video_screen.dart`
+- ARB + generated l10n (`convertToAudio`, `converting`, `audioReady`, `errorConvertFailed`)
+- Tests: `video_repository_impl_test.dart` (+4), `choose_part_cubit_test.dart` (+5), `mute_video_actions_test.dart` (+1), `temp_files_datasource_test.dart` (`export_`), cubit constructions in `mute_video_cubit_test.dart` / `add_media_test.dart`; new `integration_test/audio_export_test.dart`; `integration_test/native_cleanup_test.dart` (8th use case; a second Remove sound now keeps the first result as the file before)
 
 **Tasks**
-- [ ] Android: copy the AAC track with `MediaExtractor`+`MediaMuxer` (MPEG-4 output)
-- [ ] Android: if the track isn't AAC, decode and re-encode to AAC 192 kbps with `MediaCodec`
-- [ ] iOS: `AVAssetExportSession` with preset `AVAssetExportPresetAppleM4A`
-- [ ] Release resources on every path; delete partial output on error
-- [ ] Dart side: datasource, repository, use case, cubit action, `export_` cleanup prefix
+- [x] Android: copy the AAC track with `MediaExtractor`+`MediaMuxer` (MPEG-4 output)
+- [x] Android: if the track isn't AAC, decode and re-encode to AAC 192 kbps with `MediaCodec`
+- [x] iOS: `AVAssetExportSession` with preset `AVAssetExportPresetAppleM4A`
+- [x] Release resources on every path; delete partial output on error
+- [x] Dart side: datasource, repository, use case, cubit action, `export_` cleanup prefix
 
 **Acceptance**
-- [ ] A 1-min phone video converts in under 2 s (copy path)
-- [ ] The `.m4a` length matches the video ±50 ms
-- [ ] No audio track → `errorNoAudioTrack`
+- [ ] A 1-min phone video converts in under 2 s (copy path) *(needs a real phone video: S15)*
+- [ ] The `.m4a` length matches the video ±50 ms *(iOS simulator: length matches a WAV source within one AAC frame margin, see Tests; a real video on both platforms: S15)*
+- [x] No audio track → `errorNoAudioTrack` *(repository test)*
 
 **Tests**
-- [ ] Repository and cubit tests
-- [ ] `integration_test/audio_export_test.dart` on a device
+- [x] Repository and cubit tests *(convert on a part, convert after Remove music (Q8, A1), failure, throw, sound file ignored)*
+- [x] `integration_test/audio_export_test.dart` on the **iPhone 16 Pro simulator (iOS 26)**: 3/3 pass. A 2 s WAV written by the test: `cutAudio` 0.5–1.5 s gives a 1 s `.m4a` (±120 ms), `exportAudio` gives a 2 s `export_*.m4a`, a range past the end is refused with `bad_range`. This covers the re-encode path on iOS (WAV is not AAC)
+- [ ] The same test on an Android device *(no emulator on this Mac: S15)*
 
 **Every-step checks**
-- [ ] `flutter analyze` is clean
-- [ ] `flutter test` is green, including the VIP tests
-- [ ] `git diff --stat` reviewed, no VIP diff (`VideoMuter`/`AudioPipeline` untouched)
+- [x] `flutter analyze` is clean
+- [x] `flutter test` is green, including the VIP tests: 167 pass (157 → 167)
+- [x] `git diff --stat` reviewed, no VIP diff (`VideoMuter`/`AudioPipeline` untouched)
+- [x] `flutter build apk --debug` and `flutter build ios --simulator --debug` succeed
+
+**Notes:** a converted file shows no action buttons yet: Save to Music lands in S11, Extract text in S12, and Remove music on a sound file in S13.
 
 ---
 
@@ -541,6 +575,9 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 | Date | Step | Result | Files |
 |---|---|---|---|
+| 2026-10-26 | S10 | Completed (Android device check open). `exportAudio` native + Dart, Convert to audio button, chains on the current video; 167 tests, analyze clean, Android + iOS sim builds OK; native cut/convert 3/3 on iOS simulator; VIP untouched | see S10 |
+| 2026-10-26 | S9 | Completed (device check open). `lastInput` + stored `applied`, jobs run on the current file, one cleanup rule, original icon + screen; 157 tests, analyze clean, VIP untouched | see S9 |
+| 2026-10-26 | S8 | Completed (device check open). Sound cut (new native AudioExporter), Original label, Full length; 148 tests; analyze clean; Android + iOS sim builds OK; VIP untouched | see S8 |
 | 2026-10-26 | S7 | Completed. Action tables in state (A1, Q12), new actions widget, cut icon over videos, 005 removed; 143 tests, analyze clean, VIP untouched | see S7 |
 | 2026-10-26 | S6 | Completed. Image and audio previews, shared `PlayerHost`; 9 tests; 131 tests, analyze clean, VIP untouched | `player_host.dart`, `audio_preview.dart`, `image_preview.dart`, `preview_unavailable.dart`, panel, tests |
 | 2026-10-26 | S5 | Completed. Add widget, sheet (image/sound/video), Clear (x); `file_picker`; 16 tests; 122 tests, analyze clean, Android build OK, VIP untouched | see S5 |

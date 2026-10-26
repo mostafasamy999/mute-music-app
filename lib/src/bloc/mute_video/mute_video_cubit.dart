@@ -6,6 +6,7 @@ import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
+import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
@@ -23,6 +24,7 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     this._removeMusic,
     this._discardVideo,
     this._cutVideo,
+    this._convertToAudio,
   ) : super(const MuteVideoState());
 
   final PickMediaUseCase _pickMedia;
@@ -32,6 +34,7 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   final RemoveMusicUseCase _removeMusic;
   final DiscardVideoUseCase _discardVideo;
   final CutVideoUseCase _cutVideo;
+  final ConvertToAudioUseCase _convertToAudio;
 
   /// Adds an image, a sound or a video (spec 006 F1). It replaces the current
   /// file, its part and its outputs.
@@ -45,20 +48,7 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   /// runs, so a job never finishes on a file that is gone.
   Future<void> clear() async {
     if (state.isBusy) return;
-    final MuteVideoState previous = state;
-    _set(const MuteVideoState());
-    // Without a part the source and the original are the same file.
-    final Map<String, VideoAsset> files = <String, VideoAsset>{
-      for (final VideoAsset file in <VideoAsset?>[
-        previous.source,
-        previous.original,
-        previous.muted,
-      ].nonNulls)
-        file.path: file,
-    };
-    for (final VideoAsset file in files.values) {
-      await _discardVideo(file);
-    }
+    await _moveTo(const MuteVideoState());
   }
 
   /// Makes [range] of the original the new source (spec 003 F6).
@@ -70,6 +60,9 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   Future<void> removeMusic() =>
       _guard(AppFailure.musicRemovalFailed, _separate);
 
+  /// Writes the current video's audio into a sound file (spec 006 F7).
+  Future<void> convertToAudio() => _guard(AppFailure.convertFailed, _convert);
+
   Future<void> saveToGallery() => _guard(AppFailure.saveFailed, _save);
 
   Future<void> _pick(MediaKind kind) async {
@@ -80,13 +73,7 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
           _set(state.copyWith(status: _idleStatus));
           return;
         }
-        final MuteVideoState previous = state;
-        _set(state.withNewSource(data));
-        await _discard(<VideoAsset?>[
-          previous.source,
-          previous.original,
-          previous.muted,
-        ], data);
+        await _moveTo(state.withNewSource(data));
       case DataFailed<VideoAsset?>(:final AppFailure failure):
         _fail(failure);
     }
@@ -109,14 +96,9 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     }
   }
 
-  /// Drops the old part and result, but never the original: the user can
+  /// Drops the old part and results, but never the original: the user can
   /// still choose another part of it.
-  Future<void> _replaceSource(VideoAsset next) async {
-    final MuteVideoState previous = state;
-    _set(state.withPart(next));
-    final VideoAsset? oldPart = previous.hasPart ? previous.source : null;
-    await _discard(<VideoAsset?>[oldPart, previous.muted], next);
-  }
+  Future<void> _replaceSource(VideoAsset next) => _moveTo(state.withPart(next));
 
   bool _isWholeVideo(VideoAsset original, ClipRange range) {
     final Duration? duration = original.duration;
@@ -125,20 +107,26 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
         range.end >= duration - ClipLimits.wholeVideoTolerance;
   }
 
+  /// Runs on the current file: the latest result, else the part or the added
+  /// file (spec 006 Q8).
   Future<void> _mute() async {
-    final VideoAsset? source = state.source;
-    if (source == null) return;
+    final VideoAsset? input = state.current;
+    if (input == null) return;
     _set(state.copyWith(status: MuteVideoStatus.muting));
-    switch (await _muteVideo(source)) {
+    switch (await _muteVideo(input)) {
       case DataSuccess<VideoAsset>(:final VideoAsset data):
-        await _showResult(data, musicOnly: false);
+        await _showResult(
+          data,
+          input: input,
+          operation: MediaOperation.removeSound,
+        );
       case DataFailed<VideoAsset>(:final AppFailure failure):
         _fail(failure);
     }
   }
 
   Future<void> _separate() async {
-    final VideoAsset? source = state.source;
+    final VideoAsset? source = state.current;
     if (source == null) return;
     // The whole track is kept in memory, so a long source would be killed.
     // Fail before any download or extraction starts (spec 003 F3).
@@ -156,8 +144,28 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     );
     switch (await _removeMusic(source, onProgress: _reportStep)) {
       case DataSuccess<VideoAsset>(:final VideoAsset data):
-        await _showResult(data, musicOnly: true);
+        await _showResult(
+          data,
+          input: source,
+          operation: MediaOperation.removeMusic,
+        );
       case DataFailed<VideoAsset>(:final AppFailure failure):
+        _fail(failure);
+    }
+  }
+
+  Future<void> _convert() async {
+    final VideoAsset? input = state.current;
+    if (input == null || !input.isVideo) return;
+    _set(state.copyWith(status: MuteVideoStatus.converting));
+    switch (await _convertToAudio(input)) {
+      case DataSuccess<MediaAsset>(:final MediaAsset data):
+        await _showResult(
+          data,
+          input: input,
+          operation: MediaOperation.convertToAudio,
+        );
+      case DataFailed<MediaAsset>(:final AppFailure failure):
         _fail(failure);
     }
   }
@@ -188,26 +196,38 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
     }
   }
 
-  Future<void> _showResult(VideoAsset result, {required bool musicOnly}) async {
-    final VideoAsset? replaced = state.muted;
-    _set(
-      state.copyWith(
-        status: MuteVideoStatus.muted,
-        muted: result,
-        musicOnly: musicOnly,
-      ),
-    );
-    await _discard(<VideoAsset?>[replaced], result);
-  }
+  /// The result becomes the current file, and its input stays as the file
+  /// before the last operation (spec 006 §3.2).
+  Future<void> _showResult(
+    VideoAsset result, {
+    required VideoAsset input,
+    required MediaOperation operation,
+  }) => _moveTo(state.withResult(result, input: input, operation: operation));
 
-  /// Runs only after the state stops pointing at [videos], so the preview
-  /// never loses a file it is still showing. [keep] guards against a picker
-  /// that hands back the same path twice.
-  Future<void> _discard(List<VideoAsset?> videos, VideoAsset keep) async {
-    for (final VideoAsset? video in videos) {
-      if (video != null && video.path != keep.path) await _discardVideo(video);
+  /// Emits [next], then deletes every file the old state pointed at and the
+  /// new one doesn't. Deleting only after the emit means the preview never
+  /// loses a file it is still showing; comparing paths keeps a file that is
+  /// still used under another role (the original, the part, the result, or
+  /// the file before the last operation) and one a picker hands back twice.
+  Future<void> _moveTo(MuteVideoState next) async {
+    final Map<String, VideoAsset> before = _filesOf(state);
+    final Set<String> kept = _filesOf(next).keys.toSet();
+    _set(next);
+    for (final MapEntry<String, VideoAsset> file in before.entries) {
+      if (!kept.contains(file.key)) await _discardVideo(file.value);
     }
   }
+
+  static Map<String, VideoAsset> _filesOf(MuteVideoState state) =>
+      <String, VideoAsset>{
+        for (final VideoAsset file in <VideoAsset?>[
+          state.source,
+          state.original,
+          state.muted,
+          state.lastInput,
+        ].nonNulls)
+          file.path: file,
+      };
 
   Future<bool> _prepareModel() async {
     _set(

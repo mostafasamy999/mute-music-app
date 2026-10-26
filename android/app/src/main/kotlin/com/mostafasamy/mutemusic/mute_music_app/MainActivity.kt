@@ -31,6 +31,8 @@ class MainActivity : FlutterActivity() {
                     "extractAudio" -> extractAudio(call, result)
                     "muxAudio" -> muxAudio(call, result)
                     "cutVideo" -> cutVideo(call, result)
+                    "cutAudio" -> cutAudio(call, result)
+                    "exportAudio" -> exportAudio(call, result)
                     "videoDuration" -> videoDuration(call, result)
                     else -> result.notImplemented()
                 }
@@ -126,6 +128,53 @@ class MainActivity : FlutterActivity() {
                 mainHandler.post { result.error("bad_range", error.message, null) }
             } catch (error: Exception) {
                 mainHandler.post { result.error("cut_failed", error.message, null) }
+            }
+        }
+    }
+
+    /** Spec 006 F3: cuts a sound file into a new .m4a (AudioExporter). */
+    private fun cutAudio(call: MethodCall, result: MethodChannel.Result) {
+        val sourcePath = call.argument<String>("sourcePath")
+        val startMs = call.argument<Number>("startMs")?.toLong()
+        val endMs = call.argument<Number>("endMs")?.toLong()
+        if (sourcePath.isNullOrEmpty() || startMs == null || endMs == null) {
+            result.error("bad_argument", "sourcePath, startMs or endMs is missing", null)
+            return
+        }
+        worker.execute {
+            try {
+                val cut = AudioExporter.export(sourcePath, cacheDir, "part", startMs, endMs)
+                val payload = mapOf(
+                    "path" to cut.path,
+                    "startMs" to cut.startMs,
+                    "endMs" to cut.endMs,
+                )
+                mainHandler.post { result.success(payload) }
+            } catch (error: NoAudioTrackException) {
+                mainHandler.post { result.error("no_audio_track", error.message, null) }
+            } catch (error: BadRangeException) {
+                mainHandler.post { result.error("bad_range", error.message, null) }
+            } catch (error: Exception) {
+                mainHandler.post { result.error("cut_failed", error.message, null) }
+            }
+        }
+    }
+
+    /** Spec 006 F7: Convert to audio. The whole audio track into an .m4a. */
+    private fun exportAudio(call: MethodCall, result: MethodChannel.Result) {
+        val sourcePath = call.argument<String>("sourcePath")
+        if (sourcePath.isNullOrEmpty()) {
+            result.error("bad_argument", "sourcePath is missing", null)
+            return
+        }
+        worker.execute {
+            try {
+                val export = AudioExporter.export(sourcePath, cacheDir, "export")
+                mainHandler.post { result.success(export.path) }
+            } catch (error: NoAudioTrackException) {
+                mainHandler.post { result.error("no_audio_track", error.message, null) }
+            } catch (error: Exception) {
+                mainHandler.post { result.error("convert_failed", error.message, null) }
             }
         }
     }

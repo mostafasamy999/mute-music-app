@@ -112,5 +112,21 @@
   "addSound": "Sound",
   "addVideo": "Video",
   "clearFile": "Clear this file",
-  "labelImage": "Image"
+  "labelImage": "Image",
+  "chooseOriginal": "Original · {length}",
+  "@chooseOriginal": {
+    "placeholders": {
+      "length": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseFullLength": "Full length",
+  "showOriginal": "Show the file before this change",
+  "originalTitle": "Before the last change",
+  "labelAudio": "Audio (M4A)",
+  "convertToAudio": "Convert to audio",
+  "converting": "Making the audio file...",
+  "audioReady": "The audio file is ready.",
+  "errorConvertFailed": "Could not make an audio file from this video."
 }

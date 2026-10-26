@@ -10,6 +10,7 @@ import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
 import 'package:mute_music_app/src/domain/repositories/video_repository.dart';
+import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
@@ -67,6 +68,7 @@ void main() {
       _MockRemoveMusic(),
       discard,
       CutVideoUseCase(_NoRepository()),
+      ConvertToAudioUseCase(_NoRepository()),
     );
 
     blocTest<MuteVideoCubit, MuteVideoState>(
@@ -148,6 +150,22 @@ void main() {
         verify(() => discard(original)).called(1);
         verify(() => discard(result)).called(1);
       },
+    );
+
+    blocTest<MuteVideoCubit, MuteVideoState>(
+      'clear also deletes the file before the last operation (S9)',
+      build: build,
+      seed: () => const MuteVideoState(
+        status: MuteVideoStatus.muted,
+        source: part,
+        original: original,
+        muted: result,
+        lastInput: VideoAsset(path: '/tmp/nomusic_0.mp4'),
+      ),
+      act: (MuteVideoCubit cubit) => cubit.clear(),
+      verify: (_) => verify(
+        () => discard(const VideoAsset(path: '/tmp/nomusic_0.mp4')),
+      ).called(1),
     );
 
     blocTest<MuteVideoCubit, MuteVideoState>(

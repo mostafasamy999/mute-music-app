@@ -25,6 +25,7 @@ import 'package:mute_music_app/src/domain/repositories/language_repository.dart'
 import 'package:mute_music_app/src/domain/repositories/music_removal_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/separation_model_repository.dart';
 import 'package:mute_music_app/src/domain/repositories/video_repository.dart';
+import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_leftovers_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
@@ -45,9 +46,7 @@ void setupInjector(SharedPreferences prefs) {
   setupNetwork();
   injector
     ..registerSingleton<SharedPreferences>(prefs)
-    ..registerLazySingleton<LanguageStorage>(
-      () => LanguageStorage(injector()),
-    )
+    ..registerLazySingleton<LanguageStorage>(() => LanguageStorage(injector()))
     ..registerLazySingleton<LanguageRepository>(
       () => LanguageRepositoryImpl(injector()),
     )
@@ -99,6 +98,9 @@ void setupInjector(SharedPreferences prefs) {
       () => SaveVideoUseCase(injector()),
     )
     ..registerLazySingleton<CutVideoUseCase>(() => CutVideoUseCase(injector()))
+    ..registerLazySingleton<ConvertToAudioUseCase>(
+      () => ConvertToAudioUseCase(injector()),
+    )
     ..registerLazySingleton<DiscardVideoUseCase>(
       () => DiscardVideoUseCase(injector()),
     )
@@ -107,6 +109,7 @@ void setupInjector(SharedPreferences prefs) {
     )
     ..registerFactory<MuteVideoCubit>(
       () => MuteVideoCubit(
+        injector(),
         injector(),
         injector(),
         injector(),

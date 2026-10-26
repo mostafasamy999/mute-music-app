@@ -11,6 +11,7 @@ class PartPreview extends StatelessWidget {
     required this.controller,
     required this.failed,
     required this.onTap,
+    this.isAudio = false,
     super.key,
   });
 
@@ -19,16 +20,42 @@ class PartPreview extends StatelessWidget {
   final ValueListenable<bool> failed;
   final VoidCallback onTap;
 
+  /// A sound has no picture: show a sound mark with the play state instead.
+  final bool isAudio;
+
   @override
   Widget build(BuildContext context) {
     final VideoPlayerController? player = controller;
-    if (player != null) return Center(child: _player(player));
+    if (player != null) {
+      return Center(child: isAudio ? _sound(context, player) : _player(player));
+    }
     return ValueListenableBuilder<bool>(
       valueListenable: failed,
       builder: (BuildContext context, bool failed, _) => Center(
         child: failed
             ? Text(S.of(context).errorPickFailed, textAlign: TextAlign.center)
             : const CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget _sound(BuildContext context, VideoPlayerController player) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(Icons.graphic_eq, size: 96, color: scheme.primary),
+          ValueListenableBuilder<VideoPlayerValue>(
+            valueListenable: player,
+            builder: (_, VideoPlayerValue value, _) => Icon(
+              value.isPlaying ? Icons.pause_circle : Icons.play_circle,
+              size: 56,
+              color: scheme.primary,
+            ),
+          ),
+        ],
       ),
     );
   }

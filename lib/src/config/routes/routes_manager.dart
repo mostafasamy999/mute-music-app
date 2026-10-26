@@ -4,12 +4,16 @@ import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/presentation/screens/choose_part_screen.dart';
 import 'package:mute_music_app/src/presentation/screens/memory_probe_screen.dart';
 import 'package:mute_music_app/src/presentation/screens/mute_video_screen.dart';
+import 'package:mute_music_app/src/presentation/screens/original_screen.dart';
 
 abstract final class Routes {
   static const String muteVideo = '/';
 
   /// Takes [ChoosePartArgs] and pops with a [ClipRange], or null.
   static const String choosePart = '/choose-part';
+
+  /// Takes [OriginalArgs]: the file before the last operation, view only.
+  static const String original = '/original';
 
   /// TEMPORARY: on-device diagnostics. Debug and profile builds only.
   static const String memoryProbe = '/memory-probe';
@@ -26,6 +30,10 @@ abstract final class RoutesManager {
                 ChoosePartScreen(args: settings.arguments! as ChoosePartArgs),
             settings: settings,
           ),
+        Routes.original when settings.arguments is OriginalArgs => _page(
+          OriginalScreen(args: settings.arguments! as OriginalArgs),
+          settings,
+        ),
         Routes.memoryProbe when AppFlags.diagnostics => _page(
           const MemoryProbeScreen(),
           settings,

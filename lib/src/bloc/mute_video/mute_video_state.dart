@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/domain/entities/removal_progress.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
@@ -7,6 +8,7 @@ enum MuteVideoStatus {
   picking,
   cutting,
   muting,
+  converting,
   preparingModel,
   removingMusic,
   muted,
@@ -27,7 +29,7 @@ enum MediaAction {
 
 /// An operation already run on the current file since it was added or cut.
 /// Rule A1: an operation is never offered again once it ran.
-enum MediaOperation { removeSound, removeMusic }
+enum MediaOperation { removeSound, removeMusic, convertToAudio }
 
 class MuteVideoState {
   const MuteVideoState({
@@ -39,6 +41,8 @@ class MuteVideoState {
     this.progress = 0,
     this.musicOnly = false,
     this.removal,
+    this.applied = const <MediaOperation>{},
+    this.lastInput,
   });
 
   final MuteVideoStatus status;
@@ -63,10 +67,18 @@ class MuteVideoState {
   /// The current step of "Remove music only". Null when that job isn't running.
   final RemovalProgress? removal;
 
+  /// Operations run since the file was added or last cut (rule A1).
+  final Set<MediaOperation> applied;
+
+  /// The file before the last operation: the input of the last result, or
+  /// the added file for a part. The original icon opens it (spec 006 §3.2).
+  final VideoAsset? lastInput;
+
   bool get isBusy => const <MuteVideoStatus>{
     MuteVideoStatus.picking,
     MuteVideoStatus.cutting,
     MuteVideoStatus.muting,
+    MuteVideoStatus.converting,
     MuteVideoStatus.preparingModel,
     MuteVideoStatus.removingMusic,
     MuteVideoStatus.saving,
@@ -80,14 +92,6 @@ class MuteVideoState {
   bool get isChanged => muted != null || hasPart;
 
   bool get canSave => isChanged && !isBusy;
-
-  /// Every action on a result is offered on that result, and a new cut starts
-  /// again from the added file, so the result is the only operation so far.
-  Set<MediaOperation> get applied => muted == null
-      ? const <MediaOperation>{}
-      : <MediaOperation>{
-          musicOnly ? MediaOperation.removeMusic : MediaOperation.removeSound,
-        };
 
   /// The actions under the file, in order (spec 006 §3 and §3.1). From the
   /// data only, not the busy status, so the buttons don't jump during a job.
@@ -150,6 +154,8 @@ class MuteVideoState {
       progress: progress ?? this.progress,
       musicOnly: musicOnly ?? this.musicOnly,
       removal: removing ? removal ?? this.removal : null,
+      applied: applied,
+      lastInput: lastInput,
     );
   }
 
@@ -161,10 +167,31 @@ class MuteVideoState {
   );
 
   /// A new part (or the original again) drops any previously produced result.
-  MuteVideoState withPart(VideoAsset part) => MuteVideoState(
-    status: MuteVideoStatus.initial,
-    source: part,
-    original: original ?? source,
+  /// Every operation is offered again, and the part's "before" is the added
+  /// file.
+  MuteVideoState withPart(VideoAsset part) {
+    final VideoAsset? added = original ?? source;
+    return MuteVideoState(
+      status: MuteVideoStatus.initial,
+      source: part,
+      original: added,
+      lastInput: added != null && added.path != part.path ? added : null,
+    );
+  }
+
+  /// A new result of [operation] made from [input] (spec 006 §3.1, §3.2).
+  MuteVideoState withResult(
+    VideoAsset result, {
+    required VideoAsset input,
+    required MediaOperation operation,
+  }) => MuteVideoState(
+    status: MuteVideoStatus.muted,
+    source: source,
+    original: original,
+    muted: result,
+    musicOnly: operation == MediaOperation.removeMusic,
+    applied: <MediaOperation>{...applied, operation},
+    lastInput: input,
   );
 
   @override
@@ -177,7 +204,9 @@ class MuteVideoState {
       other.failure == failure &&
       other.progress == progress &&
       other.musicOnly == musicOnly &&
-      other.removal == removal;
+      other.removal == removal &&
+      setEquals(other.applied, applied) &&
+      other.lastInput == lastInput;
 
   @override
   int get hashCode => Object.hash(
@@ -189,5 +218,7 @@ class MuteVideoState {
     progress,
     musicOnly,
     removal,
+    Object.hashAllUnordered(applied),
+    lastInput,
   );
 }

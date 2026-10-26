@@ -24,6 +24,7 @@ class TempFilesDatasource {
     'nomusic_',
     'audio_',
     'part_',
+    'export_',
   ];
 
   /// Deletes [path] only when it lives in a temp folder, so a file the user

@@ -139,6 +139,48 @@ void main() {
         AppFailure.cutFailed,
       );
     });
+
+    // Spec 006 S8: a sound file is cut by its own native method.
+    const MediaAsset sound = MediaAsset(
+      path: '/tmp/song.mp3',
+      kind: MediaKind.audio,
+    );
+
+    test('a sound is cut into a sound part', () async {
+      when(
+        () => datasource.cutAudio(sound.path, startMs: 60000, endMs: 120000),
+      ).thenAnswer(
+        (_) async => (path: '/tmp/part_2.m4a', startMs: 60000, endMs: 120000),
+      );
+
+      final MediaAsset part =
+          (await repository.cut(sound, asked) as DataSuccess<VideoAsset>).data;
+
+      expect(part.kind, MediaKind.audio);
+      expect(part.path, '/tmp/part_2.m4a');
+      verifyNever(
+        () => datasource.cutVideo(
+          any(),
+          startMs: any(named: 'startMs'),
+          endMs: any(named: 'endMs'),
+        ),
+      );
+    });
+
+    test('a sound with no audio track maps to noAudioTrack', () async {
+      when(
+        () => datasource.cutAudio(
+          any(),
+          startMs: any(named: 'startMs'),
+          endMs: any(named: 'endMs'),
+        ),
+      ).thenThrow(PlatformException(code: 'no_audio_track'));
+
+      expect(
+        (await repository.cut(sound, asked) as DataFailed<VideoAsset>).failure,
+        AppFailure.noAudioTrack,
+      );
+    });
   });
 
   test(
@@ -213,5 +255,40 @@ void main() {
     );
 
     expect((result as DataFailed<MediaAsset?>).failure, AppFailure.pickFailed);
+  });
+
+  group('convert to audio (spec 006 S10)', () {
+    test('writes a sound file and reads its length', () async {
+      when(
+        () => datasource.exportAudio(source.path),
+      ).thenAnswer((_) async => '/tmp/export_1.m4a');
+      when(
+        () => datasource.durationMs('/tmp/export_1.m4a'),
+      ).thenAnswer((_) async => 30000);
+
+      final MediaAsset audio =
+          (await repository.convertToAudio(source) as DataSuccess<MediaAsset>)
+              .data;
+
+      expect(audio.kind, MediaKind.audio);
+      expect(audio.path, '/tmp/export_1.m4a');
+      expect(audio.duration, const Duration(seconds: 30));
+    });
+
+    for (final (Object error, AppFailure failure) in <(Object, AppFailure)>[
+      (PlatformException(code: 'no_audio_track'), AppFailure.noAudioTrack),
+      (PlatformException(code: 'convert_failed'), AppFailure.convertFailed),
+      (MissingPluginException(), AppFailure.convertFailed),
+    ]) {
+      test('$error fails as ${failure.name} and never throws', () async {
+        when(() => datasource.exportAudio(any())).thenThrow(error);
+
+        expect(
+          (await repository.convertToAudio(source) as DataFailed<MediaAsset>)
+              .failure,
+          failure,
+        );
+      });
+    }
   });
 }

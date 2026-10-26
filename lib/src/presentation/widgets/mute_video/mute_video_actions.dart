@@ -5,6 +5,7 @@ import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
 import 'package:mute_music_app/src/config/theme/app_theme.dart';
 import 'package:mute_music_app/src/domain/entities/media_asset.dart';
+import 'package:mute_music_app/src/presentation/widgets/mute_video/convert_to_audio_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_music_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/remove_sound_button.dart';
 import 'package:mute_music_app/src/presentation/widgets/mute_video/save_video_button.dart';
@@ -15,11 +16,12 @@ class MuteVideoActions extends StatelessWidget {
   const MuteVideoActions({super.key});
 
   /// Actions whose feature isn't built yet stay hidden until their plan step
-  /// lands: Convert to audio (S10), Save to Music (S11), Extract text (S12),
+  /// lands: Save to Music (S11), Extract text (S12),
   /// and Remove music on a sound file (S13).
   static const Set<MediaAction> built = <MediaAction>{
     MediaAction.removeSound,
     MediaAction.removeMusic,
+    MediaAction.convertToAudio,
     MediaAction.saveToGallery,
   };
 
@@ -49,9 +51,9 @@ class MuteVideoActions extends StatelessWidget {
   Widget _button(MediaAction action) => switch (action) {
     MediaAction.removeSound => const RemoveSoundButton(),
     MediaAction.removeMusic => const RemoveMusicButton(),
+    MediaAction.convertToAudio => const ConvertToAudioButton(),
     MediaAction.saveToGallery => const SaveVideoButton(),
     // Hidden by [built] until their steps land.
-    MediaAction.convertToAudio ||
     MediaAction.extractText ||
     MediaAction.saveToMusic => const SizedBox.shrink(),
   };

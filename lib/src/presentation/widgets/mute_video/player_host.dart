@@ -14,11 +14,15 @@ class PlayerHost extends StatefulWidget {
     required this.path,
     required this.builder,
     this.looping = false,
+    this.startAt = Duration.zero,
     super.key,
   });
 
   final String path;
   final bool looping;
+
+  /// Where playback starts, when the file is that long (spec 006 Q3).
+  final Duration startAt;
   final Widget Function(VideoPlayerController controller) builder;
 
   @override
@@ -75,6 +79,10 @@ class _PlayerHostState extends State<PlayerHost> {
     try {
       await next.initialize();
       await next.setLooping(widget.looping);
+      final Duration startAt = widget.startAt;
+      if (startAt > Duration.zero && startAt < next.value.duration) {
+        await next.seekTo(startAt);
+      }
     } on Object {
       // Not awaited: when creating the player itself failed, dispose waits
       // forever for a creation that never completes.

@@ -65,6 +65,7 @@ void main() {
     final File muted = touch(temp, 'muted_1.mp4', modified: old);
     final File noMusic = touch(temp, 'nomusic_1.mp4', modified: old);
     final File audio = touch(temp, 'audio_1.pcm.voice.pcm', modified: old);
+    final File export = touch(temp, 'export_1.m4a', modified: old);
     final File foreign = touch(temp, 'image_picker_1.mp4', modified: old);
     final File fresh = touch(
       temp,
@@ -77,6 +78,7 @@ void main() {
     expect(muted.existsSync(), isFalse);
     expect(noMusic.existsSync(), isFalse);
     expect(audio.existsSync(), isFalse);
+    expect(export.existsSync(), isFalse);
     expect(foreign.existsSync(), isTrue);
     expect(fresh.existsSync(), isTrue);
   });

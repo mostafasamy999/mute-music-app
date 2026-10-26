@@ -36,6 +36,10 @@ import os
                 Self.handleMuxAudio(call: call, result: result)
             case "cutVideo":
                 Self.handleCutVideo(call: call, result: result)
+            case "cutAudio":
+                Self.handleCutAudio(call: call, result: result)
+            case "exportAudio":
+                Self.handleExportAudio(call: call, result: result)
             case "videoDuration":
                 Self.handleVideoDuration(call: call, result: result)
             default:
@@ -163,6 +167,68 @@ import os
                     result(cutError(error))
                 }
             }
+        }
+    }
+
+    /// Spec 006 F3: cuts a sound file into a new .m4a (AudioExporter).
+    private static func handleCutAudio(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let args = call.arguments as? [String: Any],
+              let sourcePath = args["sourcePath"] as? String, !sourcePath.isEmpty,
+              let startMs = (args["startMs"] as? NSNumber)?.intValue,
+              let endMs = (args["endMs"] as? NSNumber)?.intValue else {
+            result(FlutterError(code: "bad_argument", message: "sourcePath, startMs or endMs is missing", details: nil))
+            return
+        }
+        AudioExporter.export(
+            sourcePath: sourcePath,
+            prefix: "part",
+            startMs: startMs,
+            endMs: endMs
+        ) { outcome in
+            DispatchQueue.main.async {
+                switch outcome {
+                case .success(let cut):
+                    result(["path": cut.path, "startMs": cut.startMs, "endMs": cut.endMs])
+                case .failure(let error):
+                    result(exportError(error, fallback: "cut_failed"))
+                }
+            }
+        }
+    }
+
+    /// Spec 006 F7: Convert to audio. The whole audio track into an .m4a.
+    private static func handleExportAudio(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let args = call.arguments as? [String: Any],
+              let sourcePath = args["sourcePath"] as? String, !sourcePath.isEmpty else {
+            result(FlutterError(code: "bad_argument", message: "sourcePath is missing", details: nil))
+            return
+        }
+        AudioExporter.export(sourcePath: sourcePath, prefix: "export") { outcome in
+            DispatchQueue.main.async {
+                switch outcome {
+                case .success(let export):
+                    result(export.path)
+                case .failure(let error):
+                    result(exportError(error, fallback: "convert_failed"))
+                }
+            }
+        }
+    }
+
+    private static func exportError(_ error: Error, fallback: String) -> FlutterError {
+        switch error {
+        case AudioExporterError.noAudioTrack:
+            return FlutterError(code: "no_audio_track", message: "no audio track", details: nil)
+        case AudioExporterError.badRange:
+            return FlutterError(code: "bad_range", message: "range outside the file", details: nil)
+        default:
+            return FlutterError(code: fallback, message: error.localizedDescription, details: nil)
         }
     }
 

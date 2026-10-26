@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:mute_music_app/generated/l10n.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_cubit.dart';
 import 'package:mute_music_app/src/bloc/mute_video/mute_video_state.dart';
@@ -84,6 +85,7 @@ void main() {
           original: _video,
           muted: _result,
           musicOnly: true,
+          applied: <MediaOperation>{MediaOperation.removeMusic},
         ).actions,
         <MediaAction>[
           MediaAction.convertToAudio,
@@ -99,6 +101,7 @@ void main() {
           source: _video,
           original: _video,
           muted: _result,
+          applied: <MediaOperation>{MediaOperation.removeSound},
         ).actions,
         <MediaAction>[MediaAction.saveToGallery],
       );
@@ -122,6 +125,7 @@ void main() {
           original: _sound,
           muted: _soundResult,
           musicOnly: true,
+          applied: <MediaOperation>{MediaOperation.removeMusic},
         ).actions,
         <MediaAction>[MediaAction.extractText, MediaAction.saveToMusic],
       );
@@ -196,11 +200,25 @@ void main() {
 
       expect(find.text('Remove sound'), findsOneWidget);
       expect(find.text('Remove music only'), findsOneWidget);
+      expect(find.text('Convert to audio'), findsOneWidget);
       expect(find.text('Save to gallery'), findsNothing);
       expect(
         tester.getTopLeft(find.text('Remove sound')).dy,
         lessThan(tester.getTopLeft(find.text('Remove music only')).dy),
       );
+    });
+
+    testWidgets('Convert to audio calls the cubit', (
+      WidgetTester tester,
+    ) async {
+      when(() => cubit.convertToAudio()).thenAnswer((_) async {});
+      await pump(
+        tester,
+        const MuteVideoState(source: _video, original: _video),
+      );
+
+      await tester.tap(find.text('Convert to audio'));
+      verify(() => cubit.convertToAudio()).called(1);
     });
 
     testWidgets('after Remove sound only Save to gallery shows', (
@@ -213,6 +231,7 @@ void main() {
           source: _video,
           original: _video,
           muted: _result,
+          applied: <MediaOperation>{MediaOperation.removeSound},
         ),
       );
 

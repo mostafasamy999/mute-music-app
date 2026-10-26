@@ -20,23 +20,25 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'ar';
 
-  static String m0(limit) =>
+  static String m0(length) => "الأصلي · ${length}";
+
+  static String m1(limit) =>
       "هذا الفيديو طويل جدًا لإزالة الموسيقى. اختر جزءًا حتى ${limit} أولًا.";
 
-  static String m1(time) => "النهاية ${time}";
+  static String m2(time) => "النهاية ${time}";
 
-  static String m2(start, end) => "جزء ${start}–${end}";
+  static String m3(start, end) => "جزء ${start}–${end}";
 
-  static String m3(time) => "المدة ${time}";
+  static String m4(time) => "المدة ${time}";
 
-  static String m4(time) => "البداية ${time}";
+  static String m5(time) => "البداية ${time}";
 
-  static String m5(limit) =>
+  static String m6(limit) =>
       "إزالة الموسيقى تعمل على أجزاء حتى ${limit}. إزالة الصوت تعمل على أي مدة.";
 
-  static String m6(current, total) => "الجزء ${current} من ${total}";
+  static String m7(current, total) => "الجزء ${current} من ${total}";
 
-  static String m7(percent) => "${percent}%";
+  static String m8(percent) => "${percent}%";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -48,12 +50,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "addSound": MessageLookupByLibrary.simpleMessage("صوت"),
     "addVideo": MessageLookupByLibrary.simpleMessage("فيديو"),
     "appTitle": MessageLookupByLibrary.simpleMessage("كتم الفيديو"),
+    "audioReady": MessageLookupByLibrary.simpleMessage("ملف الصوت جاهز."),
+    "chooseFullLength": MessageLookupByLibrary.simpleMessage("الطول الكامل"),
+    "chooseOriginal": m0,
     "choosePart": MessageLookupByLibrary.simpleMessage("اختر جزءًا"),
     "choosePartTitle": MessageLookupByLibrary.simpleMessage("اختر جزءًا"),
     "clearFile": MessageLookupByLibrary.simpleMessage("إزالة هذا الملف"),
+    "convertToAudio": MessageLookupByLibrary.simpleMessage("تحويل إلى صوت"),
+    "converting": MessageLookupByLibrary.simpleMessage(
+      "جارٍ إنشاء ملف الصوت...",
+    ),
     "cutting": MessageLookupByLibrary.simpleMessage("جاري قص الجزء..."),
     "downloadingModel": MessageLookupByLibrary.simpleMessage(
       "جاري التجهيز، لمرة واحدة فقط...",
+    ),
+    "errorConvertFailed": MessageLookupByLibrary.simpleMessage(
+      "تعذّر إنشاء ملف صوت من هذا الفيديو.",
     ),
     "errorCutFailed": MessageLookupByLibrary.simpleMessage(
       "تعذر قص هذا الجزء من الفيديو.",
@@ -88,18 +100,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorSaveFailed": MessageLookupByLibrary.simpleMessage(
       "تعذر حفظ الفيديو.",
     ),
-    "errorTooLongChoosePart": m0,
+    "errorTooLongChoosePart": m1,
+    "labelAudio": MessageLookupByLibrary.simpleMessage("صوت (M4A)"),
     "labelImage": MessageLookupByLibrary.simpleMessage("صورة"),
     "labelMuted": MessageLookupByLibrary.simpleMessage("بدون صوت"),
     "labelNoMusic": MessageLookupByLibrary.simpleMessage("بدون موسيقى"),
     "labelOriginal": MessageLookupByLibrary.simpleMessage("الأصلي"),
     "language": MessageLookupByLibrary.simpleMessage("اللغة"),
     "languageSystem": MessageLookupByLibrary.simpleMessage("لغة الهاتف"),
-    "partEnd": m1,
-    "partLabel": m2,
-    "partLength": m3,
-    "partStart": m4,
-    "partTooLongForMusic": m5,
+    "originalTitle": MessageLookupByLibrary.simpleMessage("قبل آخر تغيير"),
+    "partEnd": m2,
+    "partLabel": m3,
+    "partLength": m4,
+    "partStart": m5,
+    "partTooLongForMusic": m6,
     "previewUnavailable": MessageLookupByLibrary.simpleMessage(
       "لا يمكن تشغيل هذا الملف. ربما نُقل أو حُذف.",
     ),
@@ -119,13 +133,16 @@ class MessageLookup extends MessageLookupByLibrary {
       "تم الحفظ في المعرض",
     ),
     "saving": MessageLookupByLibrary.simpleMessage("جاري الحفظ..."),
+    "showOriginal": MessageLookupByLibrary.simpleMessage(
+      "اعرض الملف قبل هذا التغيير",
+    ),
     "stepBuild": MessageLookupByLibrary.simpleMessage("تجهيز الفيديو"),
     "stepExtract": MessageLookupByLibrary.simpleMessage("قراءة الصوت"),
     "stepModel": MessageLookupByLibrary.simpleMessage(
       "تحميل نموذج الذكاء الاصطناعي",
     ),
-    "stepPart": m6,
-    "stepPercent": m7,
+    "stepPart": m7,
+    "stepPercent": m8,
     "stepSeparate": MessageLookupByLibrary.simpleMessage("فصل الأصوات"),
     "usePart": MessageLookupByLibrary.simpleMessage("استخدم هذا الجزء"),
     "working": MessageLookupByLibrary.simpleMessage("جاري إزالة الصوت..."),

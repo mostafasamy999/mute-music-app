@@ -7,6 +7,7 @@ import 'package:mute_music_app/src/core/resources/app_failure.dart';
 import 'package:mute_music_app/src/core/resources/data_state.dart';
 import 'package:mute_music_app/src/domain/entities/clip_range.dart';
 import 'package:mute_music_app/src/domain/entities/video_asset.dart';
+import 'package:mute_music_app/src/domain/use_cases/convert_to_audio_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/cut_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/discard_video_use_case.dart';
 import 'package:mute_music_app/src/domain/use_cases/ensure_model_ready_use_case.dart';
@@ -28,6 +29,8 @@ class _MockRemoveMusic extends Mock implements RemoveMusicUseCase {}
 class _MockDiscard extends Mock implements DiscardVideoUseCase {}
 
 class _MockCut extends Mock implements CutVideoUseCase {}
+
+class _MockConvert extends Mock implements ConvertToAudioUseCase {}
 
 /// Spec 003: choosing a part, and the Remove music length limit.
 void main() {
@@ -57,6 +60,7 @@ void main() {
   late _MockDiscard discard;
   late _MockCut cut;
   late _MockSave save;
+  late _MockConvert convert;
 
   setUpAll(() {
     registerFallbackValue(original);
@@ -71,11 +75,20 @@ void main() {
     discard = _MockDiscard();
     cut = _MockCut();
     save = _MockSave();
+    convert = _MockConvert();
     when(() => discard(any())).thenAnswer((_) async {});
   });
 
-  MuteVideoCubit build() =>
-      MuteVideoCubit(pick, mute, save, ensureModel, removeMusic, discard, cut);
+  MuteVideoCubit build() => MuteVideoCubit(
+    pick,
+    mute,
+    save,
+    ensureModel,
+    removeMusic,
+    discard,
+    cut,
+    convert,
+  );
 
   const MuteVideoState picked = MuteVideoState(
     source: original,
@@ -341,13 +354,14 @@ void main() {
   );
 
   blocTest<MuteVideoCubit, MuteVideoState>(
-    'a second result on a part deletes only the first result',
+    'a second result on a part runs on the first and keeps it as the file '
+    'before',
     setUp: () {
       when(
         () => ensureModel(onProgress: any(named: 'onProgress')),
       ).thenAnswer((_) async => const DataSuccess<void>(null));
       when(
-        () => removeMusic(part, onProgress: any(named: 'onProgress')),
+        () => removeMusic(result, onProgress: any(named: 'onProgress')),
       ).thenAnswer(
         (_) async =>
             const DataSuccess<VideoAsset>(VideoAsset(path: '/tmp/second.mp4')),
@@ -365,9 +379,9 @@ void main() {
       expect(cubit.state.muted, const VideoAsset(path: '/tmp/second.mp4'));
       expect(cubit.state.source, part);
       expect(cubit.state.original, original);
-      verify(() => discard(result)).called(1);
-      verifyNever(() => discard(part));
-      verifyNever(() => discard(original));
+      expect(cubit.state.lastInput, result);
+      // The part is still the source, and the first result is the "before".
+      verifyNever(() => discard(any()));
     },
   );
 
@@ -412,5 +426,104 @@ void main() {
     act: (MuteVideoCubit cubit) => cubit.saveToGallery(),
     expect: () => <MuteVideoState>[],
     verify: (_) => verifyNever(() => save(any())),
+  );
+
+  // Spec 006 S10: Convert to audio runs on the current video.
+
+  const MediaAsset audio = MediaAsset(
+    path: '/tmp/export_1.m4a',
+    kind: MediaKind.audio,
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'convert makes a sound file and keeps the video as the file before',
+    setUp: () => when(
+      () => convert(part),
+    ).thenAnswer((_) async => const DataSuccess<MediaAsset>(audio)),
+    build: build,
+    seed: () => MuteVideoState(source: part, original: original),
+    act: (MuteVideoCubit cubit) => cubit.convertToAudio(),
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.status, MuteVideoStatus.muted);
+      expect(cubit.state.current, audio);
+      expect(cubit.state.lastInput, part);
+      expect(cubit.state.applied, <MediaOperation>{
+        MediaOperation.convertToAudio,
+      });
+      verifyNever(() => discard(any()));
+    },
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'convert after Remove music works on the music-free video (Q8)',
+    setUp: () => when(
+      () => convert(result),
+    ).thenAnswer((_) async => const DataSuccess<MediaAsset>(audio)),
+    build: build,
+    seed: () => MuteVideoState(
+      status: MuteVideoStatus.muted,
+      source: part,
+      original: original,
+      muted: result,
+      musicOnly: true,
+      applied: const <MediaOperation>{MediaOperation.removeMusic},
+      lastInput: part,
+    ),
+    act: (MuteVideoCubit cubit) => cubit.convertToAudio(),
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.lastInput, result);
+      expect(cubit.state.applied, <MediaOperation>{
+        MediaOperation.removeMusic,
+        MediaOperation.convertToAudio,
+      });
+      // Rule A1 on the sound file: Remove music already ran.
+      expect(cubit.state.actions, <MediaAction>[
+        MediaAction.extractText,
+        MediaAction.saveToMusic,
+      ]);
+      verify(() => convert(result)).called(1);
+    },
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'a failed convert keeps everything and frees the buttons',
+    setUp: () => when(() => convert(any())).thenAnswer(
+      (_) async => const DataFailed<MediaAsset>(AppFailure.convertFailed),
+    ),
+    build: build,
+    seed: () => picked,
+    act: (MuteVideoCubit cubit) => cubit.convertToAudio(),
+    skip: 1,
+    expect: () => <Matcher>[
+      isA<MuteVideoState>()
+          .having(
+            (MuteVideoState s) => s.failure,
+            'failure',
+            AppFailure.convertFailed,
+          )
+          .having((MuteVideoState s) => s.source, 'source', original)
+          .having((MuteVideoState s) => s.isBusy, 'isBusy', isFalse),
+    ],
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'a convert that throws ends in convertFailed, not busy',
+    setUp: () => when(() => convert(any())).thenThrow(StateError('boom')),
+    build: build,
+    seed: () => picked,
+    act: (MuteVideoCubit cubit) => cubit.convertToAudio(),
+    verify: (MuteVideoCubit cubit) {
+      expect(cubit.state.failure, AppFailure.convertFailed);
+      expect(cubit.state.isBusy, isFalse);
+    },
+  );
+
+  blocTest<MuteVideoCubit, MuteVideoState>(
+    'convert does nothing on a sound file',
+    build: build,
+    seed: () => const MuteVideoState(source: audio, original: audio),
+    act: (MuteVideoCubit cubit) => cubit.convertToAudio(),
+    expect: () => <MuteVideoState>[],
+    verify: (_) => verifyNever(() => convert(any())),
   );
 }

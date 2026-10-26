@@ -50,6 +50,7 @@ class MuteVideoCubit extends Cubit<MuteVideoState> {
   Future<void> addMedia(MediaKind kind) =>
       _guard(AppFailure.pickFailed, () => _pick(kind));
 
+  /// The pre-006 entry point, kept for the tests that add a video.
   Future<void> pickVideo() => addMedia(MediaKind.video);
 
   /// Drops the file, its part and every output, deletes the app's copies, and

@@ -1,9 +1,9 @@
 # 005 Fewer Actions: Spec
 
-**Version:** v1.0  
-**Status:** Implemented (all code tasks done, 94 tests pass at `3e8fde4`). Device check still open in [tasks.md](tasks.md). Issues: [review.md](review.md)  
+**Version:** v1.1  
+**Status:** **Superseded** by [006 Media Workspace](../006-media-workspace/spec.md) (2026-10-26). The More actions toggle and the stage-based buttons were removed in 006 plan S7; the main screen now shows only the actions for the current file (006 §3). Kept for history. Issues: [review.md](review.md)  
 **App:** `~/StudioProjects/mute-music-app`  
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-26
 
 ---
 

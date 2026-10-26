@@ -1,7 +1,7 @@
 # 006 Media Workspace: Implementation Plan
 
-**Spec:** [spec.md](spec.md) v2.6  
-**Branch:** `feature/004-app-language` (as chosen), starting at `b504eaf`  
+**Spec:** [spec.md](spec.md) v3.0  
+**Branch:** started on `feature/004-app-language` at `b504eaf`; continued on `feature/add-img-and-sound` (your branch, from S14)  
 **Last updated:** 2026-10-26
 
 ## Where this plan lives
@@ -42,7 +42,7 @@ Status: `[x]` Completed · `[ ]` Pending, In Progress or Blocked (the note says 
 - [x] **S13** Remove music only on a sound file (F6). *Full model run on a device left for S15*
 - [x] **S14** Extract text from sound or video (Whisper, offline) (F8, W8). *Phones and Android left for S15*
 - [ ] **S15** Regression and device checks (AC1–AC10)
-- [ ] **S16** Final review
+- [x] **S16** Final review
 
 Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S14 start with a spike whose result is written here before building.
 
@@ -626,16 +626,32 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 ## S16 Final review
 
-**Status:** Pending
+**Status:** Completed (2026-10-26)
 
 **Tasks**
-- [ ] `flutter analyze` and `flutter test`
-- [ ] Full diff review (VIP files untouched)
-- [ ] Update this plan with real results and files
-- [ ] Fold answers into `spec.md` and bump the version
-- [ ] Update the README index
-- [ ] Mark 005 as superseded
-- [ ] List remaining issues
+- [x] `flutter analyze` and `flutter test` *(clean; 208 pass)*
+- [x] Full diff review (VIP files untouched) *(103 files since `b504eaf`, all part of 006 or generated (`lib/generated`, `macos/Flutter/GeneratedPluginRegistrant.swift`, `Podfile.lock`). VIP files: only the two approved lines in `ios/Runner/AudioPipeline.swift`. No debug prints, TODOs or temporary code left from 006; the three "TEMPORARY" markers are the pre-006 memory probe. Two stale doc comments in the state fixed; `pickVideo()` noted as the tests' shortcut)*
+- [x] Update this plan with real results and files
+- [x] Fold answers into `spec.md` and bump the version *(v3.0: Implemented; acceptance results per AC; approved VIP fixes in §0)*
+- [x] Update the README index *(006 Implemented, branch names corrected)*
+- [x] Mark 005 as superseded *(005 v1.1)*
+- [x] List remaining issues *(below)*
+
+**Remaining issues**
+
+| # | Issue | Where | Next |
+|---|---|---|---|
+| R1 | **No real phone run yet.** Everything native ran on the iOS simulator and the Android emulator only; the Realme RMX3241 disconnected before any test. | S15 | Run the integration tests and AC1–AC10 on a real Android phone (SM-A515F or the Realme) and an iPhone |
+| R2 | **Manual walk-through not done** (AC1, AC5, AC6, AC7, AC10 have a "Manual: open" note). | spec §8 | Tap through on a phone, EN and AR |
+| R3 | **Remove music on Android not run end to end** in 006: the emulator can't hold the model. The Android video mux is unchanged since it passed on the SM-A515F (002); the sound path (S13) is new there. | S13, S15 | Phone run of `remove_music_e2e_test` |
+| R4 | **20-minute clip** with a part and Remove music not run. | S15 | Phone |
+| R5 | **Arabic speech is good, not perfect** (`base` model: one word wrong in the test). | S14 | Compare `small` on a phone (bigger, slower) if needed |
+| R6 | **MP3 re-encode path on Android** checked with WAV only (no MP3 encoder here to make a test file). | S8, S10 | A real `.mp3` on a phone |
+| R7 | **iOS release:** the Whisper plugin links microphone code; App Store review may ask for `NSMicrophoneUsageDescription` although the app never records. | S14 | Check at the first TestFlight upload |
+| R8 | **App size** grew: whisper.cpp, Tesseract and its 5.5 MB language data. | S12, S14 | Measure the release APK/IPA |
+| R9 | **No cancel** for long jobs (Remove music, speech): pre-existing 001 Q2. | 001 | Roadmap 007 |
+| R10 | Old naming: `MuteVideo*`, `VideoAsset` (now a typedef of `MediaAsset`) and the `muted` field remain; documented, not renamed. | code | Rename in a separate, behavior-free change if wanted |
+| R11 | `feature/add-img-and-sound` is 3 commits ahead of its remote; nothing is merged into `main`. | git | Push / PR when ready |
 
 ---
 
@@ -643,6 +659,7 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 | Date | Step | Result | Files |
 |---|---|---|---|
+| 2026-10-26 | S16 | Completed. Analyze clean, 208 tests; diff reviewed (only approved VIP lines); spec v3.0 Implemented with AC results; 005 superseded; README updated; remaining issues R1–R11 listed | `spec.md`, this file, README, 005 spec, `mute_video_state.dart`, `mute_video_cubit.dart` (comments) |
 | 2026-10-26 | S15 | iOS Remove music on a video fixed (approved: sourceFormatHint + no invalidate after append in `AudioPipeline.swift`); video and sound e2e pass with the real model; 208 tests, analyze clean | `AudioPipeline.swift`, `AppDelegate.swift` |
 | 2026-10-26 | S15 | In progress. Android first runs (emulator): audio 5/5 after a cut-length fix, Tesseract EN+AR 3/3, cutter 5/5, cleanup 6/6, speech 3/3; iOS sim: S13 Remove music on sound e2e pass; **iOS video Remove music crashes in VIP `writeMovie` (needs approval)** | `AudioExporter.kt`, `remove_music_e2e_test.dart` |
 | 2026-10-26 | S14 | Completed (phones/Android open). whisper.cpp `base` (SHA-256, asked), sound/video → Text screen; iOS link fix + simulator CPU; 208 tests; simulator EN exact, AR one word off | see S14 |

@@ -1,12 +1,13 @@
 # 006 Media Workspace: Image, Sound and Video
 
-**Version:** v2.6  
-**Status:** Draft. Coding follows [implementation_plan.md](implementation_plan.md), one step at a time. Q4, Q5, Q7 decided; Q6, Q8–Q10 use their defaults (§9). Nothing is blocked.  
+**Version:** v3.0  
+**Status:** **Implemented** (plan S1–S16, 2026-10-26). Checked by 208 unit tests and device tests on the iOS simulator and the Android emulator; **real phones and a manual walk-through are still open** (§8, plan S15). Q10 uses its default.  
 **App:** `~/StudioProjects/mute-music-app` (Flutter, Android + iOS)  
-**Builds on:** [001](../001-mute-video/spec.md) (Remove sound, Remove music, Save), [002](../002-music-removal-isolate/spec.md) (isolate, steps), [003](../003-choose-part/spec.md) (cut). **Replaces** the main-screen layout of 001 §4 and **removes** [005](../005-fewer-actions/spec.md) (More actions) once it ships.  
+**Builds on:** [001](../001-mute-video/spec.md) (Remove sound, Remove music, Save), [002](../002-music-removal-isolate/spec.md) (isolate, steps), [003](../003-choose-part/spec.md) (cut). **Replaces** the main-screen layout of 001 §4 and **removes** [005](../005-fewer-actions/spec.md) (More actions, deleted in plan S7).  
 **Last updated:** 2026-10-26
 
 ### Changelog
+- **v3.0 (2026-10-26):** Implemented. Acceptance results added (§8). Two existing iOS bugs in the Remove music video path fixed with the user's approval (§0).
 - **v2.6 (2026-10-26):** Speech to text decided by the S14 spike: whisper.cpp (`whisper_cpp_flutter_plus`), multilingual `base` model with SHA-256, asked before the one-time download.
 - **v2.5 (2026-10-26):** OCR engine decided by the plan's S12 spike: Tesseract (bundled tessdata_fast, eng + ara) on Android, Apple Vision on iOS. Still offline, Arabic + English.
 - **v2.4 (2026-10-26):** Q12 resolved: after only a cut, all four actions plus Save to gallery.
@@ -26,6 +27,7 @@ The Remove music only pipeline (download the model, extract, background isolate,
 - Don't edit: `music_removal_repository_impl.dart`, `separation_worker.dart`, `music_separator.dart`, `pcm_io.dart`, `core/audio/*` (`mdx_stft`, `mdx_tensor`, `chunk_window`), the native `AudioPipeline` (Android and iOS), `separation_model_repository_impl.dart`, `model_download_service.dart`.
 - New features **call** this pipeline or **add new native methods next to it**. They never change it.
 - Any step that would touch these files stops and asks for approval first.
+- **Approved changes (2026-10-26, plan S15):** two lines in `ios/Runner/AudioPipeline.swift` `writeMovie`/`pump`: the pass-through video input gets a `sourceFormatHint` (it crashed the app), and sample buffers are no longer invalidated right after `append` (the write failed with "Failed to load sample data"). Remove music on a video had likely never finished on iOS before; it now does. Nothing else in the VIP files changed.
 - Every step re-runs the DSP reference tests (`mdx_stft_test`, `mdx_tensor_test`) and the Remove music tests.
 
 ## 1. Purpose
@@ -167,18 +169,18 @@ Saves the audio output to the phone's music storage. Android: the shared `Music/
 
 ## 8. Acceptance checks
 
-| # | Check |
-|---|---|
-| AC1 | Launch: only the add widget under the app bar. Add → Image/Sound/Video opens the right picker; cancel changes nothing. |
-| AC2 | Image: only Extract text shows. Extract → Text screen → edit → Copy → the clipboard has the edited text. |
-| AC3 | Sound: Remove music only and Extract text show. Remove music gives an audio file with the voices; Save to Music works. |
-| AC4 | Video: x, cut icons on the preview; Remove sound, Remove music only, Convert to audio, Extract text under it. No More actions toggle. |
-| AC5 | Video → cut 1:00–2:00 → Remove music only → the actions are Convert to audio, Extract text, Save to gallery (Remove music hidden, A1). Save gives the part with voices only. Remove sound → only Save to gallery. |
-| AC6 | Convert to audio → Save to Music → the file plays in the phone's music app (Android) / shows in Files › On My iPhone › Mute Video (iOS). |
-| AC7 | Every edited file shows the original icon; it opens the original at the same position; back returns unchanged. |
-| AC8 | x on any state returns to Empty and leaves no temp files of that file. |
-| AC9 | 003 scenarios A–D and 002 AC1–AC5 still pass; DSP reference tests green (VIP rule). |
-| AC10 | Arabic UI and Arabic text in the Text screen are RTL and readable. |
+| # | Check | Result (2026-10-26) |
+|---|---|---|
+| AC1 | Launch: only the add widget under the app bar. Add → Image/Sound/Video opens the right picker; cancel changes nothing. | Widget tests; pickers per kind by repository tests. Manual: open |
+| AC2 | Image: only Extract text shows. Extract → Text screen → edit → Copy → the clipboard has the edited text. | Widget tests (edit, Copy); OCR read back on iOS simulator (Vision) and Android emulator (Tesseract), EN + AR |
+| AC3 | Sound: Remove music only and Extract text show. Remove music gives an audio file with the voices; Save to Music works. | iOS simulator e2e with the real model: voices kept (Whisper read the full sentence); Save to Music native test both platforms |
+| AC4 | Video: x, cut icons on the preview; Remove sound, Remove music only, Convert to audio, Extract text under it. No More actions toggle. | Widget and state tests |
+| AC5 | Video → cut 1:00–2:00 → Remove music only → the actions are Convert to audio, Extract text, Save to gallery (Remove music hidden, A1). Save gives the part with voices only. Remove sound → only Save to gallery. | State and cubit tests (A1, Save of a part); e2e Remove music on a video passes on iOS simulator. Manual: open |
+| AC6 | Convert to audio → Save to Music → the file plays in the phone's music app (Android) / shows in Files › On My iPhone › Mute Video (iOS). | Native tests: Android MediaStore insert, iOS Files folder. Seen in the music app / Files: open |
+| AC7 | Every edited file shows the original icon; it opens the original at the same position; back returns unchanged. | Widget tests (icon, position hand-off). Manual: open |
+| AC8 | x on any state returns to Empty and leaves no temp files of that file. | Cubit tests; native cleanup 6/6 on Android emulator |
+| AC9 | 003 scenarios A–D and 002 AC1–AC5 still pass; DSP reference tests green (VIP rule). | DSP reference tests green; VIP files unchanged except the approved iOS fixes; Remove music video e2e passes on iOS simulator; 003 cut tests 5/5 on Android |
+| AC10 | Arabic UI and Arabic text in the Text screen are RTL and readable. | Widget tests (RTL text, LTR time); Arabic OCR and speech read on both platforms. Manual: open |
 
 ## 9. Open questions
 

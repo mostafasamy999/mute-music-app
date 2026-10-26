@@ -57,14 +57,17 @@ class MuteVideoState {
 
   final MuteVideoStatus status;
 
-  /// What every job runs on: the chosen part, or the original when there is
-  /// no part.
+  /// The chosen part, or the added file when there is no part. Jobs run on
+  /// [current], which is this until a result exists (spec 006 Q8).
   final VideoAsset? source;
 
-  /// The picked video. Kept only so the user can choose another part without
-  /// picking again; no job ever runs on it while a part is chosen.
+  /// The added file: an image, a sound or a video. Every cut starts from it
+  /// (spec 006 F3); no job runs on it while a part is chosen.
   final VideoAsset? original;
 
+  /// The latest result of an operation (Remove sound, Remove music, Convert
+  /// to audio). The name predates spec 006, when every result was a muted
+  /// video.
   final VideoAsset? muted;
   final AppFailure? failure;
 

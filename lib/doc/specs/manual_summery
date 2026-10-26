@@ -29,6 +29,10 @@
 7- show text ( to can coby or edit )
 8- save at gallry
 
+# special cases
+1- after Remove sound, show only Save to gallery, plus the cut icon and the original icon.
+2- if remove music should con’t apply same opration at  same file
+
 /*
 vip rull
 old bevave are Very applicaple and don't edit it when remove music only

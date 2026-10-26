@@ -579,7 +579,7 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 **Status:** Pending
 
 **Tasks**
-- [ ] AC1–AC10 on the SM-A515F
+- [ ] AC1–AC10 on the Android simulator
 - [ ] AC1–AC10 on an iOS simulator or device
 - [ ] Repeated cuts
 - [ ] Several outputs from one file

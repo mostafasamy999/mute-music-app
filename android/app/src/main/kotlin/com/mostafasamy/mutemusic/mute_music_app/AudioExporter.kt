@@ -71,11 +71,13 @@ object AudioExporter {
 
             if (format.getString(MediaFormat.KEY_MIME) == AAC) {
                 copy(extractor, format, output, realStartUs, endUs)
-            } else {
-                transcode(extractor, format, output, endUs)
+                val writtenEndUs = if (endUs == Long.MAX_VALUE) realStartUs else endUs
+                return CutResult(output.absolutePath, realStartUs / 1000, writtenEndUs / 1000)
             }
-            val writtenEndUs = if (endUs == Long.MAX_VALUE) realStartUs else endUs
-            return CutResult(output.absolutePath, realStartUs / 1000, writtenEndUs / 1000)
+            // Re-encoding works on PCM, so the cut is exact: no keyframe rule.
+            transcode(extractor, format, output, askedStartUs, endUs)
+            val writtenEndUs = if (endUs == Long.MAX_VALUE) askedStartUs else endUs
+            return CutResult(output.absolutePath, askedStartUs / 1000, writtenEndUs / 1000)
         } catch (error: Exception) {
             output.delete()
             throw error
@@ -104,12 +106,15 @@ object AudioExporter {
 
     /**
      * Decodes to 16-bit PCM and encodes AAC. Timestamps come from the PCM
-     * byte count, so the output always starts at zero and has no gaps.
+     * byte count, so the output always starts at zero and has no gaps. The
+     * PCM is trimmed to [fromUs, toUs] exactly: decoded buffers can be long
+     * (about 0.1 s for WAV), so keeping whole buffers would overshoot.
      */
     private fun transcode(
         extractor: MediaExtractor,
         format: MediaFormat,
         output: File,
+        fromUs: Long,
         toUs: Long,
     ) {
         val decoder = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME)!!)
@@ -162,8 +167,10 @@ object AudioExporter {
                         pending = decoder.getOutputBuffer(index)!!.apply {
                             position(info.offset)
                             limit(info.offset + info.size)
+                            trimTo(this, info.presentationTimeUs, fromUs, toUs, bytesPerSecond, frameBytes(decoder.outputFormat))
                         }
-                        pendingLast = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
+                        pendingLast = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0 ||
+                            info.presentationTimeUs >= toUs
                     }
                 }
 
@@ -243,6 +250,30 @@ object AudioExporter {
             start()
         }
     }
+
+    /** Narrows [buffer] to the part of it inside [fromUs, toUs]. */
+    private fun trimTo(
+        buffer: java.nio.ByteBuffer,
+        startUs: Long,
+        fromUs: Long,
+        toUs: Long,
+        bytesPerSecond: Long,
+        frameBytes: Int,
+    ) {
+        fun bytesFor(us: Long): Int {
+            val bytes = (us * bytesPerSecond / 1_000_000).toInt()
+            return bytes - bytes % frameBytes
+        }
+        val size = buffer.remaining()
+        val skip = if (fromUs > startUs) minOf(size, bytesFor(fromUs - startUs)) else 0
+        val keep = if (toUs == Long.MAX_VALUE) size else
+            maxOf(0, minOf(size, bytesFor(toUs - startUs)))
+        val end = buffer.position() + maxOf(skip, keep)
+        buffer.limit(end)
+        buffer.position(minOf(buffer.position() + skip, end))
+    }
+
+    private fun frameBytes(pcm: MediaFormat): Int = pcm.getInteger(MediaFormat.KEY_CHANNEL_COUNT) * 2
 
     private fun bytesPerSecondOf(pcm: MediaFormat): Long =
         pcm.getInteger(MediaFormat.KEY_SAMPLE_RATE).toLong() *

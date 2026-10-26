@@ -576,24 +576,51 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 ## S15 Regression and device checks
 
-**Status:** Pending
+**Status:** In progress (2026-10-26). Automated device checks done; two iOS bugs in the Remove music video path found and fixed (approved); the manual walk-through, a 20-min clip and real phones are left.  
+**Devices:** iPhone 16 Pro **simulator** (iOS 26); Android **emulator** Medium Phone API 36 (the Realme RMX3241, Android 13, was connected at first but dropped off USB before any test ran). No SM-A515F here.  
+**Test media:** made on the Mac: speech with `say` (Samantha EN, Majed AR); videos with speech over a synthetic music bed (EN 7.5 s, AR 11.6 s) by an AVFoundation script; a WAV and float32 PCM written by the tests; images drawn by the OCR test.  
+**Files changed:** `android/.../AudioExporter.kt` (exact trim on the re-encode path, see below); `ios/Runner/AudioPipeline.swift` (sourceFormatHint + no invalidate after append, both approved); `ios/Runner/AppDelegate.swift` (error reason); new `integration_test/remove_music_e2e_test.dart`
 
 **Tasks**
-- [ ] AC1–AC10 on the Android simulator (not real device)
-- [ ] AC1–AC10 on an iOS simulator (not real device)
-- [ ] Repeated cuts
-- [ ] Several outputs from one file
-- [ ] Original screen during playback
-- [ ] A 20-min video with a part and Remove music (chunked separation and merge, VIP)
-- [ ] Clear during and after jobs
-- [ ] Relaunch cleanup
-- [ ] Arabic
+- [ ] AC1–AC10 on the SM-A515F *(no SM-A515F; the Realme disconnected. Android covered by the emulator below, minus the AI separation model)*
+- [ ] AC1–AC10 on an iOS simulator or device *(automated parts below; the tap-through of the UI is still to do)*
+- [x] Repeated cuts *(`video_cutter_test` 5/5 on Android; cubit tests)*
+- [x] Several outputs from one file *(cubit tests; `native_cleanup_test` 6/6 on Android)*
+- [ ] Original screen during playback *(widget tests only; manual)*
+- [ ] A 20-min video with a part and Remove music (chunked separation and merge, VIP) *(the short video now passes on iOS; a 20-min clip on a real phone is still to do; the emulator can't hold the model)*
+- [x] Clear during and after jobs *(cubit tests)*
+- [x] Relaunch cleanup *(`native_cleanup_test` 6/6 on Android, with the generated clip)*
+- [ ] Arabic *(Arabic OCR and Arabic speech checked natively on both platforms; Arabic UI by widget tests; manual pass left)*
+
+**Results**
+
+| Check | iOS simulator | Android emulator |
+|---|---|---|
+| `audio_export_test` (cut, convert, Save to Music, voices encoder, bad range) | 5/5 | 5/5 *(after the fix below)* |
+| `ocr_test` (English, Arabic, unreadable) | 3/3 (Vision) | **3/3 (Tesseract, first run ever)** |
+| `video_cutter_test` | (S8) | 5/5 |
+| `native_cleanup_test` | — | 6/6 |
+| `speech_test` (model + SHA-256, English, Arabic) | 3/3 | 3/3 |
+| Whisper English | exact | exact |
+| Whisper Arabic | last word wrong ("الطبير" for "التطبيق") | same |
+| Whisper speed (simulator/emulator CPU) | 1.4–12 s | 39–48 s *(emulated ARM; a phone is faster)* |
+| `remove_music_e2e_test` video (VIP) | **pass after fixes 1 and 2**: real model, 7.1 s, `.mp4` same length; Whisper heard the full sentence on the voices-only video (before: crash, then "Failed to load sample data") | not run (memory) |
+| `remove_music_e2e_test` sound file (S13) | **pass**: real model, extract → separate → build in 7.3 s, `.m4a` same length; Whisper then heard the full sentence on the voices-only file | not run (memory) |
+
+**Found and fixed**
+- **Android sound cut ran ~160 ms long** on the re-encode path (non-AAC sources such as WAV/MP3): whole decoded buffers (~0.1 s) were kept. The decoded PCM is now trimmed exactly to the asked range at both ends. Before: 1 s cut → 1.161 s; after: within the test's limit.
+
+**iOS video Remove music: two bugs in the original pipeline (VIP)**
+1. **Fixed (approved 2026-10-26):** `ios/Runner/AudioPipeline.swift` `writeMovie` added a pass-through video input without `sourceFormatHint`; for `.mp4` AVFoundation throws in `addInput:` and the app aborted at "Build the video". Now the video track's format description is passed. Result: no crash.
+2. **Fixed (approved 2026-10-26):** in `pump()`, `CMSampleBufferInvalidate(buffer)` right after `input.append(buffer)` destroyed data the writer still reads; the write ended with **"Failed to load sample data"**. Confirmed on macOS with a copy of `writeMovie`, then the line was deleted. **Result: iOS Remove music on a video completes** (see Results).
+- Also: `AppDelegate.audioError` now passes the reason of `AudioPipelineError.failed` to Dart (it showed only "…AudioPipelineError error 0"). AppDelegate is not a VIP file.
+- These match the 003 T6 note "killed during Build the video": **Remove music on a video has likely never completed on iOS.** Android's mux is separate code and passed on the SM-A515F in 002.
 
 **Tests**
-- [ ] Full suite
-- [ ] `integration_test/video_cutter_test.dart`
-- [ ] `integration_test/native_cleanup_test.dart`
-- [ ] Manual notes here with device, clip and timings
+- [x] Full suite
+- [x] `integration_test/video_cutter_test.dart` *(Android emulator 5/5)*
+- [x] `integration_test/native_cleanup_test.dart` *(Android emulator 6/6)*
+- [ ] Manual notes here with device, clip and timings *(timings above; manual UI pass left)*
 
 ---
 
@@ -616,6 +643,8 @@ Order note: every step is unblocked (Q4, Q5, Q7 answered 2026-10-26). S12 and S1
 
 | Date | Step | Result | Files |
 |---|---|---|---|
+| 2026-10-26 | S15 | iOS Remove music on a video fixed (approved: sourceFormatHint + no invalidate after append in `AudioPipeline.swift`); video and sound e2e pass with the real model; 208 tests, analyze clean | `AudioPipeline.swift`, `AppDelegate.swift` |
+| 2026-10-26 | S15 | In progress. Android first runs (emulator): audio 5/5 after a cut-length fix, Tesseract EN+AR 3/3, cutter 5/5, cleanup 6/6, speech 3/3; iOS sim: S13 Remove music on sound e2e pass; **iOS video Remove music crashes in VIP `writeMovie` (needs approval)** | `AudioExporter.kt`, `remove_music_e2e_test.dart` |
 | 2026-10-26 | S14 | Completed (phones/Android open). whisper.cpp `base` (SHA-256, asked), sound/video → Text screen; iOS link fix + simulator CPU; 208 tests; simulator EN exact, AR one word off | see S14 |
 | 2026-10-26 | S13 | Completed (device run open). New native encodeVoices + sound repository around the existing extract and worker; use case routes by kind; 197 tests; iOS sim encode OK; VIP untouched | see S13 |
 | 2026-10-26 | S12 | Completed (Android device check open). Spike: Tesseract (bundled eng+ara) on Android, Vision on iOS; Text screen; iOS sim OCR 3/3 incl. Arabic | see S12 |

@@ -127,7 +127,13 @@ enum AudioPipeline {
 
         // nil output settings means "copy the samples", so the picture is never
         // re-encoded. MP4 cannot hold raw audio, so that side becomes AAC.
-        let videoInput = AVAssetWriterInput(mediaType: .video, outputSettings: nil)
+        // A pass-through input into .mp4 needs the source format, or addInput
+        // throws and the app aborts (spec 006 S15).
+        let videoInput = AVAssetWriterInput(
+            mediaType: .video,
+            outputSettings: nil,
+            sourceFormatHint: (videoTrack.formatDescriptions.first as! CMFormatDescription)
+        )
         videoInput.expectsMediaDataInRealTime = false
         videoInput.transform = videoTrack.preferredTransform
         writer.add(videoInput)
@@ -187,8 +193,9 @@ enum AudioPipeline {
                     group.leave()
                     return
                 }
+                // Not invalidated after append: the writer may still read it
+                // ("Failed to load sample data", spec 006 S15).
                 input.append(buffer)
-                CMSampleBufferInvalidate(buffer)
             }
         }
     }

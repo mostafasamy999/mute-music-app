@@ -357,6 +357,10 @@ import os
         if case AudioPipelineError.noVideoTrack = error {
             return FlutterError(code: "no_video_track", message: "no video track", details: nil)
         }
+        // localizedDescription drops the reason ("…AudioPipelineError error 0").
+        if case AudioPipelineError.failed(let reason) = error {
+            return FlutterError(code: fallback, message: reason, details: nil)
+        }
         return FlutterError(code: fallback, message: error.localizedDescription, details: nil)
     }
 

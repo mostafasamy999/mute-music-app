@@ -1,7 +1,7 @@
 # 002 Music Removal: Background Isolate and Step Progress
 
 **Version:** v1.0  
-**Status:** Approved for coding (see [review.md](review.md) for the issues found and how they are handled)  
+**Status:** Implemented (all code tasks done, 94 tests pass at `3e8fde4`). Device check still open in [tasks.md](tasks.md). Issues: [review.md](review.md)  
 **App:** `~/StudioProjects/mute-music-app` (Flutter, Android + iOS)  
 **Builds on:** [001 Mute Video](../001-mute-video/spec.md) F3 "Remove music only". This spec replaces 001 tasks **T3.1** and **T3.2**.  
 **Last updated:** 2026-10-19

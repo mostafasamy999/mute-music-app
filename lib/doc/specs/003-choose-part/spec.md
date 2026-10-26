@@ -1,12 +1,13 @@
 # 003 Choose a Part: Process Only a Sub-Clip
 
-**Version:** v1.0  
-**Status:** Draft. Waiting on answers to P1–P4 (§8).  
+**Version:** v1.1  
+**Status:** Implemented (T1–T5). Device check T6 partly done. P1–P4 use the suggested defaults until product confirms (§8).  
 **App:** `~/StudioProjects/mute-music-app` (Flutter, Android + iOS)  
 **Builds on:** [001 Mute Video](../001-mute-video/spec.md) F1–F4 and [002 Music Removal Isolate](../002-music-removal-isolate/spec.md). This spec removes "Trimming / picking which part of the video to process" from 001 §2 *Out of scope*.  
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-26
 
 ### Changelog
+- **v1.1 (2026-10-26):** Status synced with the code at `3e8fde4`. No behavior change.
 - **v1.0 (2026-10-20):** First version.
 
 ---

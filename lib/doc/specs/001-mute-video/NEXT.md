@@ -1,33 +1,27 @@
 # 001 Mute Video: Start Here
 
-**Last updated:** 2026-10-19  
-**State:** T0.1, WP1, T2.1 and WP4 are done and device-checked on the API 36 emulator (not committed yet). 36 unit tests and 6 integration tests pass, and analyze is clean. Open questions Q1–Q8 haven't been sent yet.
+**Last updated:** 2026-10-26  
+**State:** 001 WP0, WP1, WP2, WP4 and 002–005 are coded at `3e8fde4` (branch `feature/004-app-language`, not merged to `main`). 94 unit tests pass, analyze is clean. Every feature still has a device check open. Open questions Q1–Q4, Q6–Q8 and 003 P1–P4 haven't been answered; the code uses the defaults.
 
-## 1. Send the open questions (10 min)
+## 1. Send the questions (10 min)
 
-Take [open-questions.md](open-questions.md) to whoever owns the product. Q1 (max length and lowest device), Q3 (model license and hosting) and Q5 (memory probe) block real work.
+Send [open-questions.md](open-questions.md), 003 §8 P1–P4 and the business questions B1–B5 in [ROADMAP.md](../ROADMAP.md) §4 together.
 
 ## 2. Work you can do now (in order)
 
-1. ~~**T0.1:** test dependencies.~~ Done.
-2. ~~**WP1 (T1.1–T1.3):** stop the screen getting stuck in a busy state.~~ Done.
-3. ~~**T2.1**~~ and ~~**WP4**~~: done.
-
-5. **T3.1 → T3.2:** the isolate spike, then move separation off the UI isolate.
-6. **WP8:** add the tests alongside the work above.
-
-**New: [003 Choose a Part](../003-choose-part/spec.md)** fixes big videos by processing only a chosen part (scenarios C and D). Start with its T1 (native cut on Android). Send its P1–P4 together with Q1–Q8.
-
-Then do T3.3 (a memory run on a device), WP5 (with the test clips), and the 🔒 tasks as answers arrive.
+1. Device checks: 002 T6, 003 T6, 004 T5, 005 T3, then 001 T3.3 (memory on the lowest device).
+2. Merge `feature/004-app-language` into `main` (ROADMAP R0.1).
+3. **WP5** native correctness with the test clips, and **WP9** housekeeping.
+4. Then the roadmap: 006 Share and 007 Cancel are first ([ROADMAP.md](../ROADMAP.md) §3).
 
 ## 3. Prompt to start a Claude session
 
 Open a session in `~/StudioProjects/mute-music-app` and paste:
 
 ```
-Read ~/work/specs-projects/specs/001-mute-video/{spec.md,review.md,plan.md,tasks.md,NEXT.md}.
-Do T3.1 (the isolate spike), then T3.2.
-Follow the plan's constraints (don't touch the DSP math; every new string in EN and AR; no exception escapes a repository).
+Read lib/doc/specs/README.md, lib/doc/specs/ROADMAP.md and lib/doc/specs/001-mute-video/{spec.md,tasks.md}.
+Do 001 WP5 (T5.1 then T5.2).
+Follow the constraints (don't touch the DSP math; every new string in EN and AR; no exception escapes a repository).
 Tick each task in tasks.md only after its Verify step passes.
 ```
 
@@ -35,7 +29,7 @@ Tick each task in tasks.md only after its Verify step passes.
 
 - Tick the finished tasks in `tasks.md`.
 - Update this file's **State** and next steps.
-- Commit the specs repo, for example `spec(001): progress — WP1 done`.
+- Commit, for example `spec(001): progress — WP5 done`.
 
 ## Running the device tests
 

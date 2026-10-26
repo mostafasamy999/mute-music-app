@@ -1,11 +1,12 @@
 # 001 Mute Video: Spec
 
-**Version:** v1.1 (baseline: describes the app as built)  
-**Status:** Draft. Waiting on product answers Q1–Q8 in [open-questions.md](open-questions.md).  
+**Version:** v1.2 (describes the app as built at `3e8fde4`)  
+**Status:** Implemented. Product answers still open: Q1–Q4, Q6–Q8 in [open-questions.md](open-questions.md) (the code uses the defaults).  
 **App:** `~/StudioProjects/mute-music-app` (Flutter, Android + iOS)  
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-26
 
 ### Changelog
+- **v1.2 (2026-10-26):** Synced with the code at `3e8fde4` (94 tests pass, analyze clean). Folds in [002](../002-music-removal-isolate/spec.md) (background isolate and step progress), [004](../004-app-language/spec.md) (in-app language) and [005](../005-fewer-actions/spec.md) (fewer actions). §4 buttons, §6 state and §9 statuses updated. New features are planned in [ROADMAP.md](../ROADMAP.md).
 - **v1.1 (2026-10-20):** Choosing a part of the video moved into scope. See [003 Choose a Part](../003-choose-part/spec.md) (scenarios C and D, F6, and the Remove music length limit).
 - **v1.0 (2026-10-19):** First spec, written from the code at commit `6fd1532`. It records the current behavior as the baseline and lists the gaps found in the review as requirements (§9).
 
@@ -24,7 +25,7 @@ They can then save the result back to their gallery. Everything runs on the devi
 **In scope (v1)**
 - One screen: pick → preview → remove sound or remove music → preview the result → save.
 - Android and iOS.
-- English and Arabic (RTL).
+- English and Arabic (RTL), following the phone by default, with an in-app picker ([004](../004-app-language/spec.md)).
 - Light and dark theme that follows the system.
 
 **Out of scope (v1)**
@@ -48,14 +49,15 @@ If the user denies the save permission, the app shows `errorPermission`, and the
 ## 4. Screen: Mute Video (`/`)
 
 Layout, from top to bottom:
-1. **App bar**: the title `appTitle`.
+1. **App bar**: the title `appTitle` and the language button ([004](../004-app-language/spec.md) L2). In debug and profile builds only, the memory-probe icon (R7).
 2. **Preview panel**: fills the remaining height.
    - With no video, it shows an empty placeholder with a movie icon.
    - With a video, it shows a label (*Original*, *No sound* or *No music*) above a looping player. Tapping the player toggles play and pause, and a play icon shows while it is paused.
    - It shows the result if there is one, and the source otherwise.
-3. **Status message**: one line of text, plus a progress bar during the AI steps (§6).
-4. **Buttons** (full width, 52 dp tall):
+3. **Status message**: one line of text. While Remove music runs, it is replaced by the step list from [002](../002-music-removal-isolate/spec.md) (model → read audio → separate n/N → build video).
+4. **Buttons** (full width, 52 dp tall). Which ones show depends on the stage, with a **More actions** toggle that shows all five ([005](../005-fewer-actions/spec.md)). In full order:
    - **Pick a video** / **Pick another video** (outlined)
+   - **Choose a part** (outlined, [003](../003-choose-part/spec.md))
    - **Remove music only** (filled)
    - **Remove sound** (filled)
    - **Save to gallery** (tonal)
@@ -110,8 +112,11 @@ Layout, from top to bottom:
 
 | Field | Meaning |
 |---|---|
-| `status` | `initial`, `picking`, `muting`, `preparingModel`, `removingMusic`, `muted`, `saving`, `saved` or `failure` |
-| `source` | The picked video (`VideoAsset`: path plus optional size) |
+| `status` | `initial`, `picking`, `cutting`, `muting`, `preparingModel`, `removingMusic`, `muted`, `saving`, `saved` or `failure` |
+| `source` | The video to process (`VideoAsset`: path, optional size, duration, and a `ClipRange` when it is a part) |
+| `original` | The picked video when a part is chosen ([003](../003-choose-part/spec.md) §7.3) |
+| `removal` | The current Remove music step and its progress ([002](../002-music-removal-isolate/spec.md)) |
+| `stage` (derived) | `empty`, `picked` or `done`, from source/result only ([005](../005-fewer-actions/spec.md)) |
 | `muted` | The result video, from either F2 or F3 |
 | `musicOnly` | True when the result came from F3 (voices kept) |
 | `progress` | 0.0–1.0. Only meaningful in `preparingModel` and `removingMusic` |
@@ -124,6 +129,7 @@ If a job finishes after the screen is closed, it must not emit a new state or cr
 | Status | Text |
 |---|---|
 | initial | `emptyHint` |
+| cutting | `cutting` |
 | muting | `working` |
 | preparingModel | `downloadingModel` + a progress bar |
 | removingMusic | `removingMusic NN%` + a progress bar |
@@ -160,15 +166,15 @@ The tests against the PyTorch reference (`mdx_stft_test`, `mdx_tensor_test`) are
 
 ## 9. Non-functional requirements
 
-| ID | Requirement | Status in v1.0 |
+| ID | Requirement | Status at v1.2 (`3e8fde4`) |
 |---|---|---|
-| R1 | The UI stays responsive (no visible freeze above about 100 ms) while music is being removed | **Not met.** The STFT runs on the UI isolate (review C1) |
-| R2 | No failure path leaves the cubit busy. Every exception maps to an `AppFailure` | **Not met** (review C2) |
-| R3 | Memory: a clip up to the max length (Q1) finishes on the lowest supported device without an out-of-memory kill | **Unknown.** The whole track is kept in memory (review C3) |
-| R4 | Temporary files (PCM, intermediate MP4s) are deleted on success, on failure, and when a new video is picked | **Partly met** (review M1) |
-| R5 | Native resources (codecs, extractors, muxers) are released on every path | **Not met** on Android (review M2) |
-| R6 | The output keeps the source's orientation, and the audio stays in sync with the video | Met for orientation. Sync is not verified (review M5) |
-| R7 | Diagnostics tools are not reachable in release builds | **Not met** (review M6) |
+| R1 | The UI stays responsive (no visible freeze above about 100 ms) while music is being removed | **Met on Android** (002: worst UI wait 81 ms on the SM-A515F). Not checked on iOS |
+| R2 | No failure path leaves the cubit busy. Every exception maps to an `AppFailure` | **Met** (001 WP1, tested) |
+| R3 | Memory: a clip up to the max length (Q1) finishes on the lowest supported device without an out-of-memory kill | **Mitigated, not measured.** Remove music is limited to 5 min, with Choose a part for longer videos (003). T3.3 device run still open |
+| R4 | Temporary files (PCM, intermediate MP4s) are deleted on success, on failure, and when a new video is picked | **Met** (001 WP4, plus the iOS `tmp/` fix in 003 T6) |
+| R5 | Native resources (codecs, extractors, muxers) are released on every path | **Met on Android** by code review (001 T4.3). Not tested on iOS |
+| R6 | The output keeps the source's orientation, and the audio stays in sync with the video | Met for orientation. Sync is not verified (review M5, 001 WP5) |
+| R7 | Diagnostics tools are not reachable in release builds | **Met** (`AppFlags.diagnostics`) |
 | R8 | Every user-visible string is localized in EN and AR | Met |
 | R9 | The model download is verified (Q3) | Size check only |
 

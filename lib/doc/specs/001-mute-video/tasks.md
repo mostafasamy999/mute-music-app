@@ -28,12 +28,12 @@ Legend: 🔒 blocked on an open question.
 
 > T3.1 and T3.2 moved to [002-music-removal-isolate](../002-music-removal-isolate/tasks.md).
 
-- [ ] **T3.1** Spike: check whether `flutter_onnxruntime` can create a session and run inside a background isolate (with `BackgroundIsolateBinaryMessenger`). Record the result in `current-state.md`.
+- [x] **T3.1** *(done in 002 T1: yes on the SM-A515F)* Spike: check whether `flutter_onnxruntime` can create a session and run inside a background isolate (with `BackgroundIsolateBinaryMessenger`). Record the result in `current-state.md`.
   **Verify:** a written yes or no, with the device and OS used.
-- [ ] **T3.2** Add `SeparationWorker` (full isolate, or pack/unpack-only per T3.1), and make `MusicRemovalRepositoryImpl` call it.
+- [x] **T3.2** *(done in 002 T3)* Add `SeparationWorker` (full isolate, or pack/unpack-only per T3.1), and make `MusicRemovalRepositoryImpl` call it.
   **Verify:** during music removal on a real device, the progress bar animates smoothly and back navigation responds in under 100 ms. The output still matches AC3.
 - [ ] **T3.3** Run `MemoryProbe` on the lowest supported device (Q1) with a clip at the max length. Record the peak in `current-state.md`.
-- [ ] **T3.4** 🔒 Q1: either enforce the max length (add a `videoTooLong` failure, its EN/AR strings and a check on pick) or stream the chunks (plan WP3 step 2).
+- [ ] **T3.4** 🔒 Q1 *(the enforce option is done with the 5 min default in 003 T4; streaming not started)*: either enforce the max length (add a `videoTooLong` failure, its EN/AR strings and a check on pick) or stream the chunks (plan WP3 step 2).
   **Verify:** a clip at the max length finishes on the lowest device. A longer clip shows the localized limit message (enforce), or also finishes (stream).
 
 ## WP4: Temporary files and native resources

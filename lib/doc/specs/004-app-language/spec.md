@@ -1,7 +1,7 @@
 # 004 App Language: Spec
 
 **Version:** v1.0  
-**Status:** Approved for coding (issues in [review.md](review.md))  
+**Status:** Implemented (all code tasks done, 94 tests pass at `3e8fde4`). Device check still open in [tasks.md](tasks.md). Issues: [review.md](review.md)  
 **App:** `~/StudioProjects/mute-music-app`  
 **Last updated:** 2026-10-20
 

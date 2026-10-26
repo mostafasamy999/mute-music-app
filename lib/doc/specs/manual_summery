@@ -1,0 +1,30 @@
+### AI must never modify this file
+i need when open app see only one widgetunder action bar
+empty scren with add icon at center to can upload img or sound or viedio
+
+
+-----------
+when user upload file
+then can click at "x" btn to clear this wrong file
+and can see these actions
+
+if the file are img => user see btn to can only extract the text inside the img
+if th file are sond => user can clear the music only / extract the text from sound
+if the file are video => user can see over the view "cut icon to can select particular videw" and under the video holder can see only 3 opeions remove sound or remove music only or convert to mb3 / extract the text from the file
+if the file are video and user cut this video to sub and then remove music only => still show other avilable actions ( remove music / convert to mb3 / extract the text from the file / save at gallry )
+
+
+ie user can make action save at gallry if make any change of video
+user can coby text or edit inside app if make extract text action ( from img or sound or video )
+user can save at music local storage if ouput are mb3
+
+
+user can see over the output file the icon to see the file before last opration but when click at cut user can cut from origen video or sound
+
+
+/*
+vip rull
+old bevave are Very applicaple and don't edit it when remove music only
+becouse i have worked at it alotof time to can atchive this approach of working ( devide larg video ........)
+ie don't break it
+*/
